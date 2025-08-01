@@ -1,226 +1,250 @@
-# GenAI Chatbot
+# 🚀 Production-Grade GenAI Chatbot
 
-A production-grade GenAI Chatbot built with OpenAI GPT-4, LangChain, RAG (Retrieval-Augmented Generation), and comprehensive monitoring.
+A comprehensive, production-ready GenAI Chatbot built with modern technologies including OpenAI GPT-4, LangChain, Docker, Kubernetes, Jenkins CI/CD, and Prometheus/Grafana monitoring.
 
-## 🚀 Features
+## 🏗️ Architecture
 
-- **OpenAI GPT-4 Integration**: Advanced language model for natural conversations
-- **LangChain Orchestration**: Structured AI workflows and chains
-- **RAG (Retrieval-Augmented Generation)**: Context-aware responses using vector databases
-- **Intent Classification**: Smart routing based on user intent
-- **MLflow Experiment Tracking**: Monitor and track AI model performance
-- **Prometheus/Grafana Monitoring**: Real-time metrics for latency, throughput, and drift
-- **Docker & Kubernetes Ready**: Production deployment ready
-- **FastAPI Backend**: High-performance async API
-
-## 📋 Prerequisites
-
-- Python 3.9+
-- Poetry (for dependency management)
-- OpenAI API Key
-- Docker (optional, for containerization)
-
-## 🛠️ Installation
-
-### 1. Clone the repository
-```bash
-git clone <repository-url>
-cd GenAI_Chatbot
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   FastAPI       │    │   OpenAI GPT-4  │
+│   (Web/Mobile)  │◄──►│   Application   │◄──►│   LLM Service   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   ChromaDB      │    │   LangChain     │    │   Intent        │
+│   Vector Store  │◄──►│   RAG Pipeline  │◄──►│   Classifier    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### 2. Install dependencies with Poetry
-```bash
-# Install Poetry (if not already installed)
-curl -sSL https://install.python-poetry.org | python3 -
+## ✨ Features
 
-# Install dependencies
-poetry install
-```
+### 🤖 Core AI Features
+- **OpenAI GPT-4 Integration**: Advanced language model for intelligent responses
+- **RAG (Retrieval-Augmented Generation)**: Enhanced responses with document context
+- **Intent Classification**: Smart routing of user queries
+- **Conversation Management**: Multi-turn dialogue support
+- **Document Processing**: PDF and text file support
 
-### 3. Set up environment variables
-Create a `.env` file in the root directory:
-```bash
-# OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-4
-OPENAI_MAX_TOKENS=1000
-OPENAI_TEMPERATURE=0.7
+### 🐳 Production Features
+- **Docker Containerization**: Consistent deployment across environments
+- **Kubernetes Orchestration**: Scalable, resilient deployment
+- **Jenkins CI/CD**: Automated testing and deployment pipeline
+- **GitHub Actions**: Alternative CI/CD workflow
+- **Monitoring & Observability**: Prometheus metrics + Grafana dashboards
 
-# API Configuration
-API_HOST=0.0.0.0
-API_PORT=8000
-DEBUG=False
-
-# MLflow Configuration
-MLFLOW_TRACKING_URI=http://localhost:5000
-MLFLOW_EXPERIMENT_NAME=genai-chatbot
-
-# Vector Database Configuration
-VECTOR_DB_PATH=./data/vector_db
-CHROMA_PERSIST_DIRECTORY=./data/chroma
-
-# RAG Configuration
-RAG_TOP_K=5
-RAG_SIMILARITY_THRESHOLD=0.7
-
-# Intent Classification
-INTENT_CONFIDENCE_THRESHOLD=0.8
-```
+### 📊 Monitoring & Observability
+- **Custom Metrics**: Chat requests, tokens, costs, RAG performance
+- **Real-time Dashboards**: Grafana visualization
+- **Health Checks**: Application and infrastructure monitoring
+- **Performance Tracking**: Response times, error rates
 
 ## 🚀 Quick Start
 
-### 1. Activate the Poetry environment
+### Prerequisites
+- Python 3.11+
+- Docker & Docker Compose
+- Kubernetes cluster (minikube/kind)
+- Poetry (Python package manager)
+
+### 1. Clone and Setup
 ```bash
-poetry shell
+git clone <your-repo-url>
+cd GenAI_Chatbot
+poetry install
 ```
 
-### 2. Run the application
+### 2. Environment Configuration
+Create a `.env` file:
 ```bash
-# Run with Poetry
-poetry run python -m app.main
-
-# Or run directly with uvicorn
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-### 3. Access the API
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Metrics**: http://localhost:8000/metrics
-
-## 📁 Project Structure
-
-```
-GenAI_Chatbot/
-├── app/                    # Main application code
-│   ├── __init__.py
-│   ├── main.py            # FastAPI entrypoint
-│   ├── config.py          # Configuration settings
-│   ├── chains/            # LangChain pipelines
-│   ├── retriever/         # RAG components
-│   ├── intents/           # Intent classification
-│   └── utils/             # Utility functions
-├── tests/                 # Unit and integration tests
-├── data/                  # Data storage (created automatically)
-├── pyproject.toml         # Poetry configuration
-├── README.md              # This file
-└── .env                   # Environment variables (create this)
-```
-
-## 🔧 Development
-
-### Running Tests
+### 3. Local Development
 ```bash
-poetry run pytest
+# Run locally
+poetry run python run.py
+
+# Or with Docker
+./docker-run.ps1
 ```
 
-### Code Formatting
+### 4. Kubernetes Deployment
 ```bash
-# Format code with Black
-poetry run black app/ tests/
+# Deploy to Kubernetes
+kubectl apply -f k8s/
 
-# Sort imports with isort
-poetry run isort app/ tests/
-
-# Type checking with mypy
-poetry run mypy app/
+# Access the application
+# Add to hosts file: 127.0.0.1 genai-chatbot.local
+# Then visit: http://genai-chatbot.local
 ```
 
-### Adding Dependencies
+## 📋 API Endpoints
+
+### Core Endpoints
+- `GET /` - Application info
+- `GET /health` - Health check
+- `GET /docs` - API documentation
+- `POST /chat` - Main chat endpoint
+
+### RAG Endpoints
+- `POST /upload-document` - Upload documents
+- `GET /knowledge-base/stats` - KB statistics
+- `DELETE /knowledge-base/clear` - Clear KB
+- `POST /knowledge-base/initialize` - Initialize KB
+
+### Monitoring Endpoints
+- `GET /metrics` - Prometheus metrics
+- `GET /intents/info` - Intent classification info
+
+## 🐳 Docker
+
+### Build Image
 ```bash
-# Add production dependency
-poetry add package_name
-
-# Add development dependency
-poetry add --group dev package_name
+docker build -t genai-chatbot:latest .
 ```
 
-## 📊 Monitoring & Observability
-
-### MLflow Experiment Tracking
-- Track model performance metrics
-- Log prompts and responses
-- Monitor latency and throughput
-- Access at: http://localhost:5000
-
-### Prometheus Metrics
-- Request latency
-- Throughput (requests per second)
-- Error rates
-- Custom business metrics
-
-### Grafana Dashboards
-- Real-time monitoring dashboards
-- Alerting and notifications
-- Performance analytics
-
-## 🐳 Docker Deployment
-
-### Build the Docker image
+### Run Container
 ```bash
-docker build -t genai-chatbot .
+docker run -d --name genai-chatbot -p 8000:8000 --env-file .env \
+  -v ${PWD}/data:/app/data -v ${PWD}/chroma_db:/app/chroma_db \
+  genai-chatbot:latest
 ```
 
-### Run with Docker
-```bash
-docker run -p 8000:8000 --env-file .env genai-chatbot
-```
+## ☸️ Kubernetes
 
-## ☸️ Kubernetes Deployment
-
-### Apply Kubernetes manifests
+### Deploy All Components
 ```bash
 kubectl apply -f k8s/
 ```
 
-### Check deployment status
-```bash
-kubectl get pods -l app=genai-chatbot
-```
+### Access URLs
+- **Application**: `http://genai-chatbot.local`
+- **Grafana**: `http://localhost:3000` (admin/admin)
+- **Prometheus**: `http://localhost:9090`
+- **Jenkins**: `http://localhost:8080` (admin/admin123)
 
 ## 🔄 CI/CD Pipeline
 
-The project includes Jenkins pipeline configuration for:
+### Jenkins Pipeline
+The `Jenkinsfile` includes:
+- Code checkout
+- Dependency installation
+- Testing
+- Code quality checks
+- Docker build
+- Kubernetes deployment
+- Health checks
+
+### GitHub Actions
+The `.github/workflows/ci-cd.yml` provides:
 - Automated testing
 - Code quality checks
 - Docker image building
-- Kubernetes deployment
-- Monitoring setup
+- Deployment automation
 
-## 📈 Performance Metrics
+## 📊 Monitoring
 
-- **Latency**: < 2 seconds average response time
-- **Throughput**: 100+ requests per second
-- **Availability**: 99.9% uptime
-- **Accuracy**: 95%+ intent classification accuracy
+### Custom Metrics
+- `genai_chatbot_chat_requests_total` - Total chat requests
+- `genai_chatbot_tokens_used_total` - Token consumption
+- `genai_chatbot_cost_total` - Cost tracking
+- `genai_chatbot_rag_requests_total` - RAG performance
+- `genai_chatbot_intent_classifications_total` - Intent analysis
+
+### Grafana Dashboards
+- Real-time chat metrics
+- Token usage and costs
+- RAG performance
+- System health monitoring
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+poetry run pytest tests/ -v
+```
+
+### API Testing
+```bash
+python test_api.py
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+- `OPENAI_API_KEY` - OpenAI API key
+- `OPENAI_MODEL` - Model name (default: gpt-4)
+- `OPENAI_TEMPERATURE` - Response creativity (default: 0.7)
+- `OPENAI_MAX_TOKENS` - Max response length (default: 1000)
+
+### Kubernetes Config
+- ConfigMaps for application settings
+- Secrets for sensitive data
+- Persistent volumes for data storage
+
+## 📈 Scaling
+
+### Horizontal Pod Autoscaler
+```bash
+kubectl apply -f k8s/horizontal-pod-autoscaler.yaml
+```
+
+### Load Balancing
+- Kubernetes service load balancing
+- Ingress controller routing
+- Multiple pod replicas
+
+## 🛡️ Security
+
+### Best Practices
+- Environment variables for secrets
+- Kubernetes secrets management
+- Container security scanning
+- Network policies (configurable)
+
+## 📝 Development
+
+### Project Structure
+```
+GenAI_Chatbot/
+├── app/                    # Main application
+│   ├── chains/            # LangChain pipelines
+│   ├── intents/           # Intent classification
+│   ├── retriever/         # RAG components
+│   └── utils/             # Utilities
+├── k8s/                   # Kubernetes manifests
+├── tests/                 # Test suite
+├── data/                  # Sample documents
+└── docs/                  # Documentation
+```
+
+### Adding Features
+1. Create feature branch
+2. Implement changes
+3. Add tests
+4. Update documentation
+5. Create pull request
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
+2. Create feature branch
+3. Make changes
+4. Add tests
+5. Submit pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## 🆘 Support
 
-For support and questions:
-- Create an issue in the repository
-- Check the documentation
-- Review the API documentation at `/docs`
+For issues and questions:
+- Create GitHub issue
+- Check documentation
+- Review logs and metrics
 
-## 🔮 Roadmap
+---
 
-- [ ] Enhanced RAG with multiple vector databases
-- [ ] Advanced intent classification with custom models
-- [ ] Multi-language support
-- [ ] Real-time streaming responses
-- [ ] Advanced monitoring with drift detection
-- [ ] A/B testing framework
-- [ ] User authentication and authorization
-- [ ] Conversation history and context management 
+**Built with ❤️ using modern DevOps practices** 

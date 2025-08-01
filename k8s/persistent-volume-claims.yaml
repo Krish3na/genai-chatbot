@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: genai-chatbot-data-pvc
+  namespace: genai-chatbot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: hostpath  # Changed from standard to hostpath
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: genai-chatbot-chroma-pvc
+  namespace: genai-chatbot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: hostpath  # Changed from standard to hostpath 

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-config
+  namespace: jenkins
+data:
+  init.groovy: |
+    import jenkins.model.*
+    import hudson.security.*
+    import jenkins.security.s2m.AdminWhitelistRule
+    
+    def instance = Jenkins.instance
+    
+    // Create admin user
+    def hudsonRealm = new HudsonPrivateSecurityRealm(false)
+    hudsonRealm.createAccount("admin", "admin123")
+    instance.setSecurityRealm(hudsonRealm)
+    
+    // Set authorization strategy
+    def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+    instance.setAuthorizationStrategy(strategy)
+    
+    // Disable CSRF protection for API access
+    instance.setCrumbIssuer(null)
+    
+    // Save configuration
+    instance.save() 

@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genai-chatbot
+  namespace: genai-chatbot
+  labels:
+    app: genai-chatbot
+    version: v1.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: genai-chatbot
+  template:
+    metadata:
+      labels:
+        app: genai-chatbot
+        version: v1.0.0
+    spec:
+      containers:
+      - name: genai-chatbot
+        image: genai-chatbot:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: genai-chatbot-secrets
+              key: OPENAI_API_KEY
+        - name: OPENAI_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: OPENAI_MODEL
+        - name: OPENAI_TEMPERATURE
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: OPENAI_TEMPERATURE
+        - name: OPENAI_MAX_TOKENS
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: OPENAI_MAX_TOKENS
+        - name: API_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: API_HOST
+        - name: API_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: API_PORT
+        - name: CHROMA_PERSIST_DIRECTORY
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: CHROMA_PERSIST_DIRECTORY
+        - name: MLFLOW_TRACKING_URI
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: MLFLOW_TRACKING_URI
+        - name: MLFLOW_EXPERIMENT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: genai-chatbot-config
+              key: MLFLOW_EXPERIMENT_NAME
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: chroma-volume
+          mountPath: /app/chroma_db
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: genai-chatbot-data-pvc
+      - name: chroma-volume
+        persistentVolumeClaim:
+          claimName: genai-chatbot-chroma-pvc 

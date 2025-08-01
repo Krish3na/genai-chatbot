@@ -1,0 +1,61 @@
+name: GenAI Chatbot CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: poetry install --only main
+    
+    - name: Run tests
+      run: poetry run pytest tests/ -v
+    
+    - name: Code quality checks
+      run: |
+        poetry run black --check app/
+        poetry run isort --check-only app/
+        poetry run mypy app/
+  
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Docker image
+      run: docker build -t genai-chatbot:latest .
+    
+    - name: Deploy to Kubernetes
+      run: |
+        # This would require kubectl and kubeconfig setup
+        # For now, just echo the deployment command
+        echo "kubectl set image deployment/genai-chatbot genai-chatbot=genai-chatbot:latest -n genai-chatbot"
+        echo "kubectl rollout status deployment/genai-chatbot -n genai-chatbot"
+    
+    - name: Health check
+      run: |
+        echo "curl -f http://genai-chatbot.local/health" 

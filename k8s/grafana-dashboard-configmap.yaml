@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-genai-chatbot
+  namespace: genai-chatbot
+  labels:
+    app: grafana
+data:
+  genai-chatbot-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "GenAI Chatbot Dashboard",
+        "tags": ["genai", "chatbot"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Chat Requests Total",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "genai_chatbot_chat_requests_total",
+                "legendFormat": "{{intent}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Tokens Used",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "genai_chatbot_tokens_used_total",
+                "legendFormat": "{{model}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Request Duration",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "rate(genai_chatbot_chat_request_duration_seconds_sum[5m])",
+                "legendFormat": "{{intent}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Cost Tracking",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "genai_chatbot_cost_total",
+                "legendFormat": "Total Cost"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+          },
+          {
+            "id": 5,
+            "title": "Intent Distribution",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum(genai_chatbot_chat_requests_total) by (intent)",
+                "legendFormat": "{{intent}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "10s"
+      }
+    } 

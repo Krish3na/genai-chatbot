@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  genai-chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-4
+      - OPENAI_TEMPERATURE=0.7
+      - OPENAI_MAX_TOKENS=1000
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - MLFLOW_TRACKING_URI=http://localhost:5000
+      - MLFLOW_EXPERIMENT_NAME=genai-chatbot
+      - CHROMA_PERSIST_DIRECTORY=chroma_db
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - genai-network
+
+  # Optional: Add MLflow for experiment tracking
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://localhost:5000
+    command: mlflow server --host 0.0.0.0 --port 5000
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - genai-network
+    profiles:
+      - mlflow
+
+networks:
+  genai-network:
+    driver: bridge
+
+volumes:
+  mlflow_data: 

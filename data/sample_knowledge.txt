@@ -1,0 +1,51 @@
+GenAI Chatbot Knowledge Base
+
+This document contains information about the GenAI Chatbot project and its features.
+
+PROJECT OVERVIEW:
+The GenAI Chatbot is a production-grade AI assistant built with OpenAI GPT-4 and LangChain. It features retrieval-augmented generation (RAG) for enhanced knowledge access and intent classification for better query routing.
+
+KEY FEATURES:
+1. OpenAI GPT-4 Integration: The chatbot uses OpenAI's GPT-4 model for natural language processing and generation.
+
+2. LangChain Framework: Built on LangChain for robust LLM application development with features like memory management and prompt templates.
+
+3. Retrieval-Augmented Generation (RAG): The system can access and search through document knowledge bases to provide more accurate and contextual responses.
+
+4. Intent Classification: Advanced intent recognition to route different types of queries appropriately.
+
+5. Multi-User Support: Handles conversations for multiple users with conversation history and memory.
+
+6. Production Monitoring: Integrated with Prometheus and Grafana for monitoring latency, throughput, and model performance.
+
+7. Containerization: Docker support for easy deployment and scaling.
+
+8. Kubernetes Deployment: Production-ready deployment with Kubernetes manifests.
+
+9. CI/CD Pipeline: Jenkins integration for automated testing and deployment.
+
+TECHNICAL ARCHITECTURE:
+- Backend: FastAPI (Python web framework)
+- LLM: OpenAI GPT-4
+- Vector Database: ChromaDB for document embeddings
+- Memory: ConversationBufferMemory for chat history
+- Monitoring: Prometheus/Grafana
+- Containerization: Docker
+- Orchestration: Kubernetes
+- CI/CD: Jenkins
+
+DEPLOYMENT:
+The chatbot can be deployed in multiple environments:
+- Local development with Poetry
+- Docker containers for consistent environments
+- Kubernetes clusters for production scaling
+- Cloud platforms (AWS, GCP, Azure)
+
+MONITORING AND OBSERVABILITY:
+- Real-time metrics collection
+- Performance monitoring
+- Cost tracking for OpenAI API usage
+- Error tracking and alerting
+- User interaction analytics
+
+This knowledge base helps the chatbot provide accurate information about its own capabilities and architecture. 

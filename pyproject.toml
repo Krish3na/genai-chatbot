@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "genai-chatbot"
+version = "0.1.0"
+description = "Production-grade GenAI Chatbot with LangChain, OpenAI, RAG, and monitoring"
+authors = ["Krishna saikrishna.sriram3@gmail.com"]
+readme = "README.md"
+packages = [
+    {include = "app"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.116.1"
+uvicorn = "^0.35.0"
+langchain = "^0.3.27"
+openai = "^1.97.1"
+chromadb = "^1.0.15"
+mlflow = "^3.1.4"
+prometheus-fastapi-instrumentator = "^7.1.0"
+python-dotenv = "^1.1.1"
+langchain-openai = "^0.3.28"
+langchain-community = "^0.3.27"
+pypdf = "^4.2.0"
+python-multipart = "^0.0.20"
+prometheus-client = "^0.21.0"
+langchain-chroma = "^0.2.5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+black = "^25.1.0"
+isort = "^6.0.1"
+mypy = "^1.17.0"
+httpx = "^0.28.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+

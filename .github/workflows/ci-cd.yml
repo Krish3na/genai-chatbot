@@ -2,9 +2,9 @@ name: GenAI Chatbot CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   test:
@@ -34,28 +34,44 @@ jobs:
         poetry run black --check app/
         poetry run isort --check-only app/
         poetry run mypy app/
-  
-  build-and-deploy:
+    
+    - name: Build Docker image
+      run: |
+        docker build -t genai-chatbot:latest .
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm genai-chatbot:latest python -c "import app; print('✅ Docker image test passed')"
+    
+    - name: Validate Kubernetes manifests
+      run: |
+        kubectl apply --dry-run=client -f k8s/
+    
+    - name: Success notification
+      run: |
+        echo "✅ All tests passed!"
+        echo "🚀 Ready for deployment!"
+
+  deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     
     steps:
     - uses: actions/checkout@v3
     
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
     
-    - name: Build Docker image
-      run: docker build -t genai-chatbot:latest .
-    
-    - name: Deploy to Kubernetes
+    - name: Configure kubectl
       run: |
-        # This would require kubectl and kubeconfig setup
-        # For now, just echo the deployment command
+        # This would be configured with your actual kubeconfig
+        echo "Kubernetes deployment would happen here"
         echo "kubectl set image deployment/genai-chatbot genai-chatbot=genai-chatbot:latest -n genai-chatbot"
-        echo "kubectl rollout status deployment/genai-chatbot -n genai-chatbot"
     
     - name: Health check
       run: |
+        echo "Health check would be performed here"
         echo "curl -f http://genai-chatbot.local/health" 

@@ -33,6 +33,7 @@ spec:
         - name: jenkins-home
           mountPath: /var/jenkins_home
         - name: jenkins-config
+<<<<<<< HEAD
           mountPath: /var/jenkins_home/init.groovy.d/
           subPath: init.groovy
         - name: jenkins-webhook-config
@@ -47,12 +48,39 @@ spec:
           subPath: setup-tools.sh
         command: ["/bin/bash"]
         args: ["-c", "apt-get update && apt-get install -y python3 python3-pip curl git && chmod +x /usr/local/bin/setup-tools.sh && /usr/local/bin/setup-tools.sh && /usr/local/bin/jenkins.sh"]
+=======
+          mountPath: /var/jenkins_home/init.groovy.d
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /jenkins/login
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /jenkins/login
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+>>>>>>> b21476e553ea4597ddea74104c8c93d79701bee6
       volumes:
       - name: jenkins-home
         persistentVolumeClaim:
           claimName: jenkins-pvc
       - name: jenkins-config
         configMap:
+<<<<<<< HEAD
           name: jenkins-config
       - name: jenkins-webhook-config
         configMap:
@@ -66,3 +94,6 @@ spec:
       - name: tools-script
         configMap:
           name: jenkins-tools-config 
+=======
+          name: jenkins-config 
+>>>>>>> b21476e553ea4597ddea74104c8c93d79701bee6

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-tools-config
+  namespace: jenkins
+data:
+  setup-tools.sh: |
+    #!/bin/bash
+    echo "Setting up tools for Jenkins..."
+    
+    # Install Python3 and pip
+    apt-get update
+    apt-get install -y python3 python3-pip curl git wget unzip
+    
+    # Install Poetry
+    curl -sSL https://install.python-poetry.org | python3 -
+    ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+    
+    # Install kubectl
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x kubectl
+    mv kubectl /usr/local/bin/
+    
+    # Install Docker CLI (not daemon)
+    curl -fsSL https://get.docker.com/buildx/latest | sh
+    ln -s /usr/local/bin/docker-buildx /usr/local/bin/docker
+    
+    # Set up kubectl config
+    mkdir -p /root/.kube
+    if [ -f /root/.kube/config ]; then
+        echo "kubectl config found"
+    else
+        echo "kubectl config not found, will be mounted from host"
+    fi
+    
+    echo "Tools setup completed!"
+    echo "Python3: $(python3 --version)"
+    echo "Poetry: $(poetry --version)"
+    echo "kubectl: $(kubectl version --client)"
+    echo "Git: $(git --version)" 

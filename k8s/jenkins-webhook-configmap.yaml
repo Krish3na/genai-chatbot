@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-webhook-config
+  namespace: jenkins
+data:
+  webhook.groovy: |
+    import jenkins.model.*
+    import org.jenkinsci.plugins.workflow.job.WorkflowJob
+    import hudson.model.*
+    import hudson.triggers.SCMTrigger
+    
+    def instance = Jenkins.instance
+    
+    // Configure GitHub webhook
+    def githubTrigger = new hudson.triggers.SCMTrigger("H/5 * * * *")
+    
+    // Find our pipeline job
+    def job = instance.getItem("genai-chatbot-pipeline")
+    if (job != null) {
+        // Add GitHub webhook trigger
+        job.addTrigger(githubTrigger)
+        job.save()
+        println "GitHub webhook configured for genai-chatbot-pipeline"
+    } else {
+        println "Pipeline job not found, will be configured when created"
+    }
+    
+    // Configure GitHub plugin settings
+    def githubPlugin = instance.getPlugin("github")
+    if (githubPlugin != null) {
+        println "GitHub plugin is installed"
+    } else {
+        println "GitHub plugin not found, will install automatically"
+    }
+    
+    instance.save() 

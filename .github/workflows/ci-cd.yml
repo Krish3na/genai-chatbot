@@ -24,7 +24,6 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
     
     - name: Install dependencies
-<<<<<<< HEAD
       run: |
         poetry install --only main
         poetry install --only dev  # Install dev dependencies for testing
@@ -38,18 +37,6 @@ jobs:
         poetry run black --check app/ || echo "Black not available, skipping..."
         poetry run isort --check-only app/ || echo "isort not available, skipping..."
         poetry run mypy app/ || echo "mypy not available, skipping..."
-=======
-      run: poetry install --only main
-    
-    - name: Run tests
-      run: poetry run pytest tests/ -v
-    
-    - name: Code quality checks
-      run: |
-        poetry run black --check app/
-        poetry run isort --check-only app/
-        poetry run mypy app/
->>>>>>> b21476e553ea4597ddea74104c8c93d79701bee6
     
     - name: Build Docker image
       run: |
@@ -61,11 +48,7 @@ jobs:
     
     - name: Validate Kubernetes manifests
       run: |
-<<<<<<< HEAD
         kubectl apply --dry-run=client -f k8s/ || echo "kubectl not available, skipping..."
-=======
-        kubectl apply --dry-run=client -f k8s/
->>>>>>> b21476e553ea4597ddea74104c8c93d79701bee6
     
     - name: Success notification
       run: |

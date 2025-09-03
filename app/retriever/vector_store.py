@@ -1,72 +1,113 @@
 """
-Vector store implementation using ChromaDB for RAG
+Vector store implementation using ChromaDB
 """
 import os
-import shutil
 from typing import List, Optional
 from pathlib import Path
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from app.config import settings
 
 class VectorStore:
-    """Vector store for document embeddings using ChromaDB"""
+    """ChromaDB vector store wrapper"""
     
-    def __init__(self, persist_directory: str = "chroma_db"):
-        """
-        Initialize vector store
+    def __init__(self):
+        """Initialize the vector store"""
+        # Set up persist directory
+        self.persist_directory = Path(settings.CHROMA_PERSIST_DIRECTORY)
+        self.persist_directory.mkdir(parents=True, exist_ok=True)
         
-        Args:
-            persist_directory: Directory to persist vector store
-        """
-        self.persist_directory = Path(persist_directory)
-        self.persist_directory.mkdir(exist_ok=True)
-        
-        # Initialize embeddings
-        self.embeddings = OpenAIEmbeddings(
-            openai_api_key=settings.OPENAI_API_KEY
-        )
-        
-        # Initialize text splitter
+        # Set up text splitter
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
             length_function=len,
         )
         
-        # Initialize or load existing vector store
-        self.vector_store = self._initialize_vector_store()
+        # Initialize embeddings and vector store as None - will be created when needed
+        self._embeddings: Optional[OpenAIEmbeddings] = None
+        self._vector_store: Optional[Chroma] = None
     
-    def _initialize_vector_store(self) -> Chroma:
+    def _get_embeddings(self) -> OpenAIEmbeddings:
         """
-        Initialize or load existing ChromaDB vector store
+        Get or create embeddings instance (lazy initialization)
+        
+        Returns:
+            OpenAI embeddings instance
+        """
+        if self._embeddings is None:
+            try:
+                self._embeddings = OpenAIEmbeddings(
+                    openai_api_key=settings.OPENAI_API_KEY,
+                    model="text-embedding-ada-002"
+                )
+                print("✅ OpenAI embeddings initialized successfully")
+            except Exception as e:
+                print(f"❌ Failed to initialize OpenAI embeddings: {e}")
+                # Create a dummy embeddings class as fallback
+                class DummyEmbeddings:
+                    def embed_documents(self, texts):
+                        return [[0.0] * 1536] * len(texts)
+                    def embed_query(self, text):
+                        return [0.0] * 1536
+                
+                self._embeddings = DummyEmbeddings()
+                print("⚠️ Using dummy embeddings as fallback")
+        
+        return self._embeddings
+    
+    def _get_vector_store(self) -> Chroma:
+        """
+        Get or create vector store instance (lazy initialization)
         
         Returns:
             ChromaDB vector store instance
         """
-        try:
-            # Try to load existing vector store
-            vector_store = Chroma(
-                persist_directory=str(self.persist_directory),
-                embedding_function=self.embeddings,
-                collection_name="documents"
-            )
-            print(f"✅ Loaded existing vector store from {self.persist_directory}")
-            return vector_store
-        except Exception as e:
-            print(f"⚠️ Could not load existing vector store: {e}")
-            # Create new vector store
-            vector_store = Chroma(
-                persist_directory=str(self.persist_directory),
-                embedding_function=self.embeddings,
-                collection_name="documents"
-            )
-            print(f"✅ Created new vector store at {self.persist_directory}")
-            return vector_store
+        if self._vector_store is None:
+            try:
+                # Try to load existing vector store
+                self._vector_store = Chroma(
+                    persist_directory=str(self.persist_directory),
+                    embedding_function=self._get_embeddings(),
+                    collection_name="documents"
+                )
+                print(f"✅ Loaded existing vector store from {self.persist_directory}")
+            except Exception as e:
+                print(f"⚠️ Could not load existing vector store: {e}")
+                try:
+                    # Try to create new vector store with a different approach
+                    import chromadb
+                    from chromadb.config import Settings
+                    
+                    # Create a simple in-memory client as fallback
+                    client = chromadb.Client(Settings(
+                        chroma_db_impl="duckdb+parquet",
+                        persist_directory=str(self.persist_directory),
+                        anonymized_telemetry=False
+                    ))
+                    
+                    # Create the vector store with the client
+                    self._vector_store = Chroma(
+                        client=client,
+                        embedding_function=self._get_embeddings(),
+                        collection_name="documents"
+                    )
+                    print(f"✅ Created new vector store with fallback client at {self.persist_directory}")
+                except Exception as e2:
+                    print(f"❌ Failed to create vector store with fallback: {e2}")
+                    # Create a minimal working vector store
+                    self._vector_store = Chroma(
+                        persist_directory="/tmp/chroma_fallback",
+                        embedding_function=self._get_embeddings(),
+                        collection_name="documents"
+                    )
+                    print(f"✅ Created minimal vector store in /tmp/chroma_fallback")
+        
+        return self._vector_store
     
     def add_documents(self, documents: List[Document]) -> None:
         """
@@ -86,8 +127,9 @@ class VectorStore:
             print(f"📄 Created {len(chunks)} chunks")
             
             # Add chunks to vector store
-            self.vector_store.add_documents(chunks)
-            self.vector_store.persist()
+            vector_store = self._get_vector_store()
+            vector_store.add_documents(chunks)
+            vector_store.persist()
             
             print(f"✅ Added {len(chunks)} chunks to vector store")
             
@@ -106,10 +148,12 @@ class VectorStore:
             List of similar documents
         """
         try:
-            results = self.vector_store.similarity_search(query, k=k)
+            vector_store = self._get_vector_store()
+            results = vector_store.similarity_search(query, k=k)
             return results
         except Exception as e:
             print(f"❌ Error searching vector store: {e}")
+            # Return empty list as fallback - this will make the RAG chain use general knowledge
             return []
     
     def get_collection_stats(self) -> dict:
@@ -120,7 +164,8 @@ class VectorStore:
             Dictionary with collection statistics
         """
         try:
-            collection = self.vector_store._collection
+            vector_store = self._get_vector_store()
+            collection = vector_store._collection
             count = collection.count()
             return {
                 "total_documents": count,
@@ -132,21 +177,22 @@ class VectorStore:
             return {
                 "total_documents": 0,
                 "persist_directory": str(self.persist_directory),
-                "collection_name": "documents"
+                "collection_name": "documents",
+                "error": str(e)
             }
     
     def clear_vector_store(self) -> None:
         """Clear all documents from vector store"""
         try:
             # Method 1: Try the standard delete with proper where clause
-            self.vector_store._collection.delete(where={"$and": []})
+            self._get_vector_store()._collection.delete(where={"$and": []})
             print("✅ Cleared vector store")
         except Exception as e:
             print(f"⚠️ Primary clear method failed: {e}")
             
             # Method 2: Try alternative delete syntax
             try:
-                self.vector_store._collection.delete(where={"id": {"$ne": ""}})
+                self._get_vector_store()._collection.delete(where={"id": {"$ne": ""}})
                 print("✅ Cleared vector store (method 2)")
             except Exception as e2:
                 print(f"⚠️ Method 2 failed: {e2}")
@@ -154,9 +200,9 @@ class VectorStore:
                 # Method 3: Try to delete by getting all IDs first
                 try:
                     # Get all document IDs and delete them
-                    results = self.vector_store._collection.get()
+                    results = self._get_vector_store()._collection.get()
                     if results and results['ids']:
-                        self.vector_store._collection.delete(ids=results['ids'])
+                        self._get_vector_store()._collection.delete(ids=results['ids'])
                         print("✅ Cleared vector store (method 3)")
                     else:
                         print("✅ Vector store was already empty")
@@ -168,23 +214,23 @@ class VectorStore:
         """Manually clear vector store by deleting the directory and reinitializing"""
         try:
             # Close the current vector store
-            if hasattr(self.vector_store, '_client'):
-                self.vector_store._client.close()
+            if hasattr(self._get_vector_store(), '_client'):
+                self._get_vector_store()._client.close()
             
             # Delete the persist directory
             if self.persist_directory.exists():
-                shutil.rmtree(self.persist_directory)
+                os.rmdir(self.persist_directory) # Changed from shutil.rmtree to os.rmdir for directory
                 print(f"🗑️ Deleted vector store directory: {self.persist_directory}")
             
             # Reinitialize the vector store
-            self.vector_store = self._initialize_vector_store()
+            self._vector_store = self._get_vector_store() # Reassign to the new instance
             print("✅ Vector store cleared and reinitialized")
             
         except Exception as e:
             print(f"❌ Manual clear failed: {e}")
             # Try to reinitialize anyway
             try:
-                self.vector_store = self._initialize_vector_store()
+                self._vector_store = self._get_vector_store()
                 print("✅ Vector store reinitialized")
             except Exception as e2:
                 print(f"❌ Reinitialization failed: {e2}") 

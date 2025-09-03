@@ -3,29 +3,28 @@ Main FastAPI application for GenAI Chatbot
 """
 import os
 import time
-from typing import Dict, Any, Optional
+import logging
+from typing import Dict, Any, Optional, List
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Response
+from fastapi import FastAPI, HTTPException, UploadFile, File, Response, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.chains.conversation_manager import ConversationManager
+from app.chains.chat_chain import ChatChain
+from app.retriever.rag_chain import RAGChain
+from app.intents.intent_classifier import IntentClassifier
 from app.retriever.document_loader import DocumentLoader
 from app.config import settings
 from app.utils import get_existing_file_hashes, calculate_file_hash
-from app.utils.metrics import (
-    record_chat_metrics, record_rag_metrics, record_document_upload,
-    record_document_deletion, update_knowledge_base_documents,
-    record_intent_classification, record_error, update_active_conversations,
-    # Import the actual metric objects to register them
-    CHAT_REQUESTS_TOTAL, CHAT_REQUEST_DURATION, CHAT_TOKENS_USED, CHAT_COST_TOTAL,
-    RAG_REQUESTS_TOTAL, RAG_SOURCES_USED, RAG_CONTEXT_LENGTH,
-    DOCUMENT_UPLOADS_TOTAL, DOCUMENT_DELETIONS_TOTAL, KNOWLEDGE_BASE_DOCUMENTS,
-    INTENT_CLASSIFICATIONS_TOTAL, ERRORS_TOTAL, ACTIVE_CONVERSATIONS
-)
+from app.utils.metrics import record_chat_metrics, record_document_upload, record_error
 from prometheus_client import REGISTRY, generate_latest
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -44,15 +43,17 @@ app.add_middleware(
 )
 
 # Initialize Prometheus metrics
-instrumentator = Instrumentator()
-instrumentator.instrument(app)
+# Disable automatic instrumentation for now - we'll use custom metrics
+# instrumentator = Instrumentator()
+# instrumentator.instrument(app)
 # Don't expose metrics automatically, we'll handle it manually
 
-# Initialize conversation manager
+# Initialize components
 conversation_manager = ConversationManager()
-
-# Initialize document loader
-document_loader = DocumentLoader()
+chat_chain = ChatChain()
+rag_chain = RAGChain()
+intent_classifier = IntentClassifier()
+document_loader = DocumentLoader()  # Will use DATA_DIR environment variable
 
 # Pydantic models
 class ChatRequest(BaseModel):
@@ -136,79 +137,58 @@ async def health_check():
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """
-    Main chat endpoint with LangChain + OpenAI integration, RAG support, and Intent Classification
-    """
+    """Chat endpoint with RAG capabilities"""
     start_time = time.time()
     
     try:
-        # Process message with LangChain, RAG, and Intent Classification
-        result = await conversation_manager.process_message(
-            message=request.message,
-            user_id=request.user_id,
-            use_rag=request.use_rag
-        )
+        # Use conversation manager to process the message (this handles intent classification, RAG, and conversation tracking)
+        result = await conversation_manager.process_message(request.message, request.user_id, request.use_rag)
         
-        # Extract response data
-        response = result.get("response", "I apologize, but I couldn't process your message.")
-        tokens_used = result.get("tokens_used", 0)
-        cost = result.get("cost", 0.0)
-        model = result.get("model", settings.OPENAI_MODEL)
-        response_type = result.get("response_type", "chat")
-        sources_used = result.get("sources_used", 0)
-        context_length = result.get("context_length", 0)
-        intent = result.get("intent", "general")
-        confidence = result.get("confidence", 0.0)
-        intent_description = result.get("intent_description", "")
-        response_style = result.get("response_style", "conversational")
-        latency_ms = result.get("latency_ms", (time.time() - start_time) * 1000)
+        # Calculate latency
+        latency_ms = (time.time() - start_time) * 1000
         
         # Record metrics
-        duration = time.time() - start_time
         record_chat_metrics(
             user_id=request.user_id,
-            intent=intent,
-            response_type=response_type,
-            duration=duration,
-            tokens=tokens_used,
-            cost=cost,
-            model=model
+            intent=result["intent"],
+            response_type=result["response_type"],
+            duration=latency_ms / 1000,  # Convert to seconds
+            tokens=result["tokens_used"],
+            cost=result["cost"],
+            model=result["model"]
         )
         
-        # Record RAG metrics if RAG was used
-        if response_type == "rag":
-            record_rag_metrics(
-                user_id=request.user_id,
-                sources_used=sources_used,
-                context_length=context_length
-            )
-        
-        # Record intent classification metrics
-        record_intent_classification(intent, confidence)
-        
-        return ChatResponse(
-            response=response,
-            intent=intent,
-            confidence=confidence,
-            intent_description=intent_description,
-            response_style=response_style,
-            latency_ms=latency_ms,
-            tokens_used=tokens_used,
-            cost=cost,
-            model=model,
-            response_type=response_type,
-            sources_used=sources_used,
-            context_length=context_length
-        )
+        return {
+            "response": result["response"],
+            "intent": result["intent"],
+            "confidence": result["confidence"],
+            "intent_description": result["intent_description"],
+            "response_style": result["response_style"],
+            "latency_ms": latency_ms,
+            "tokens_used": result["tokens_used"],
+            "cost": result["cost"],
+            "model": result["model"],
+            "response_type": result["response_type"],
+            "sources_used": result.get("sources_used", 0),
+            "context_length": result.get("context_length", 0)
+        }
         
     except Exception as e:
-        # Record error metrics
-        record_error("chat_processing_error", "/chat")
-        latency_ms = (time.time() - start_time) * 1000
-        raise HTTPException(
-            status_code=500,
-            detail=f"Chat processing failed: {str(e)}"
-        )
+        logger.error(f"Error in chat endpoint: {e}")
+        return {
+            "response": f"I apologize, but I encountered an error: {str(e)}",
+            "intent": "error",
+            "confidence": 0.0,
+            "intent_description": "Error occurred",
+            "response_style": "apologetic",
+            "latency_ms": (time.time() - start_time) * 1000,
+            "tokens_used": 0,
+            "cost": 0.0,
+            "model": settings.OPENAI_MODEL,
+            "response_type": "error",
+            "sources_used": 0,
+            "context_length": 0
+        }
 
 @app.post("/upload-document", response_model=DocumentUploadResponse)
 async def upload_document(
@@ -268,6 +248,11 @@ async def upload_document(
             # Record successful upload metric
             file_type = file.filename.split('.')[-1].lower()
             record_document_upload(file_type, True)
+            
+            # Update knowledge base document count
+            from app.utils.metrics import update_knowledge_base_documents
+            doc_count = conversation_manager.get_document_count()
+            update_knowledge_base_documents(doc_count)
             
             message = f"Document '{file.filename}' uploaded successfully"
             
@@ -365,6 +350,11 @@ async def upload_multiple_documents(
         result = conversation_manager.add_documents_to_knowledge_base(all_documents)
         
         if result["success"]:
+            # Update knowledge base document count
+            from app.utils.metrics import update_knowledge_base_documents
+            doc_count = conversation_manager.get_document_count()
+            update_knowledge_base_documents(doc_count)
+            
             message = f"Successfully uploaded {len(uploaded_files)} files with {result['documents_added']} chunks"
             
             if failed_files:
@@ -419,6 +409,11 @@ async def initialize_knowledge_base():
         result = conversation_manager.add_documents_to_knowledge_base(documents)
         
         if result["success"]:
+            # Update knowledge base document count
+            from app.utils.metrics import update_knowledge_base_documents
+            doc_count = conversation_manager.get_document_count()
+            update_knowledge_base_documents(doc_count)
+            
             return DocumentUploadResponse(
                 success=True,
                 message=f"Knowledge base initialized successfully with {len(documents)} documents",
@@ -694,27 +689,6 @@ async def test_endpoint():
         "status": "ok"
     }
 
-@app.post("/chat-mock", response_model=ChatResponse)
-async def chat_mock(request: ChatRequest):
-    """
-    Mock chat endpoint for testing without OpenAI
-    """
-    start_time = time.time()
-
-    # Mock response without calling OpenAI
-    response = f"Mock response: I received your message '{request.message}'. This is a test response without OpenAI."
-    latency_ms = (time.time() - start_time) * 1000
-
-    return ChatResponse(
-        response=response,
-        intent="general",
-        confidence=0.9,
-        latency_ms=latency_ms,
-        tokens_used=0,
-        cost=0.0,
-        model="mock"
-    )
-
 @app.get("/metrics")
 async def metrics():
     """Prometheus metrics endpoint"""
@@ -764,6 +738,17 @@ async def get_intent_info():
         "total_intents": len(intents),
         "auto_classification": True
     }
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize metrics on application startup"""
+    try:
+        from app.utils.metrics import update_knowledge_base_documents
+        doc_count = conversation_manager.get_document_count()
+        update_knowledge_base_documents(doc_count)
+        print(f"✅ Initialized knowledge base document count: {doc_count}")
+    except Exception as e:
+        print(f"❌ Failed to initialize knowledge base metrics: {e}")
 
 if __name__ == "__main__":
     import uvicorn

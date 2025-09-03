@@ -9,6 +9,7 @@ from langchain_community.callbacks.manager import get_openai_callback
 
 from app.config import settings
 from app.retriever.vector_store import VectorStore
+from app.utils.metrics import record_rag_metrics
 
 class RAGChain:
     """RAG chain combining document retrieval with generation"""
@@ -22,6 +23,7 @@ class RAGChain:
             openai_api_key=settings.OPENAI_API_KEY
         )
         
+        # Initialize vector store (lazy initialization)
         self.vector_store = VectorStore()
         
         # RAG prompt template
@@ -49,20 +51,41 @@ Answer:""")
             Dictionary with response and metadata
         """
         try:
-            # Retrieve relevant documents
-            relevant_docs = self.vector_store.similarity_search(query, k=4)
+            # Try to retrieve relevant documents
+            try:
+                relevant_docs = self.vector_store.similarity_search(query, k=4)
+                if relevant_docs:
+                    context = self._prepare_context(relevant_docs)
+                    sources_used = len(relevant_docs)
+                    use_rag = True
+                    print(f"✅ Using RAG with {sources_used} documents")
+                else:
+                    # No documents found, use general knowledge with RAG
+                    context = "No specific documents found. Please provide a general response based on your knowledge."
+                    sources_used = 0
+                    use_rag = True
+                    print("✅ Using RAG with general knowledge (no documents found)")
+            except Exception as e:
+                print(f"⚠️ Vector store failed, falling back to direct OpenAI: {e}")
+                # Fallback to direct OpenAI call without RAG
+                context = "Please provide a helpful response to the user's question."
+                sources_used = 0
+                use_rag = False
+                print("⚠️ Using direct OpenAI (fallback mode)")
             
-            # Prepare context from retrieved documents
-            context = self._prepare_context(relevant_docs)
-            
-            # Generate response using RAG
+            # Generate response
             with get_openai_callback() as cb:
-                response = await self.llm.ainvoke(
-                    self.rag_prompt.format(
-                        context=context,
-                        question=query
+                if use_rag:
+                    response = await self.llm.ainvoke(
+                        self.rag_prompt.format(
+                            context=context,
+                            question=query
+                        )
                     )
-                )
+                else:
+                    # Direct response without RAG
+                    direct_prompt = f"Please provide a helpful response to this question: {query}"
+                    response = await self.llm.ainvoke(direct_prompt)
             
             # Prepare response data
             response_data = {
@@ -70,20 +93,40 @@ Answer:""")
                 "tokens_used": cb.total_tokens,
                 "cost": cb.total_cost,
                 "model": settings.OPENAI_MODEL,
-                "sources_used": len(relevant_docs),
-                "context_length": len(context)
+                "sources_used": sources_used,
+                "context_length": len(context),
+                "method": "rag" if use_rag else "direct"
             }
+            
+            # Record RAG metrics if RAG was used
+            if use_rag:
+                try:
+                    print(f"🔍 DEBUG: About to record RAG metrics for user {user_id}")
+                    record_rag_metrics(
+                        user_id=user_id,
+                        sources_used=sources_used,
+                        context_length=len(context)
+                    )
+                    print(f"✅ DEBUG: RAG metrics recorded successfully")
+                except Exception as e:
+                    print(f"❌ DEBUG: Failed to record RAG metrics: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print(f"🔍 DEBUG: Not recording RAG metrics (use_rag=False)")
             
             return response_data
             
         except Exception as e:
+            print(f"❌ Error in RAG chain: {e}")
             return {
                 "response": f"I apologize, but I encountered an error: {str(e)}",
                 "tokens_used": 0,
                 "cost": 0.0,
                 "model": settings.OPENAI_MODEL,
                 "sources_used": 0,
-                "context_length": 0
+                "context_length": 0,
+                "method": "error"
             }
     
     def _prepare_context(self, documents: List[Document]) -> str:
@@ -101,16 +144,7 @@ Answer:""")
         
         context_parts = []
         for i, doc in enumerate(documents, 1):
-            # Extract source information
-            source = doc.metadata.get('source', 'Unknown source')
-            page = doc.metadata.get('page', '')
-            
-            # Format document content
-            content = doc.page_content.strip()
-            if len(content) > 500:  # Truncate long content
-                content = content[:500] + "..."
-            
-            context_parts.append(f"Document {i} (Source: {source}{f', Page: {page}' if page else ''}):\n{content}\n")
+            context_parts.append(f"Document {i}:\n{doc.page_content}\n")
         
         return "\n".join(context_parts)
     
@@ -122,25 +156,20 @@ Answer:""")
             documents: List of documents to add
             
         Returns:
-            Dictionary with operation results
+            Dictionary with operation result
         """
         try:
             self.vector_store.add_documents(documents)
-            
-            # Get updated stats
-            stats = self.vector_store.get_collection_stats()
-            
             return {
                 "success": True,
                 "documents_added": len(documents),
-                "vector_store_stats": stats
+                "message": f"Successfully added {len(documents)} documents to knowledge base"
             }
-            
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
-                "documents_added": 0
+                "message": f"Failed to add documents to knowledge base: {str(e)}"
             }
     
     def get_knowledge_base_stats(self) -> Dict[str, Any]:
@@ -150,26 +179,26 @@ Answer:""")
         Returns:
             Dictionary with knowledge base statistics
         """
-        return self.vector_store.get_collection_stats()
+        try:
+            stats = self.vector_store.get_collection_stats()
+            return stats
+        except Exception as e:
+            return {
+                "total_documents": 0,
+                "persist_directory": str(self.vector_store.persist_directory),
+                "collection_name": "documents",
+                "error": str(e)
+            }
     
     def clear_knowledge_base(self) -> Dict[str, Any]:
         """
         Clear the knowledge base
         
         Returns:
-            Dictionary with operation results
+            Dictionary with operation result
         """
         try:
-            # Try the standard clear method first
-            self.vector_store.clear_vector_store()
-            
-            # Check if it actually worked by getting stats
-            stats = self.vector_store.get_collection_stats()
-            if stats["total_documents"] > 0:
-                # If still has documents, try manual clear
-                print("⚠️ Standard clear didn't work, trying manual clear...")
-                self.vector_store.clear_vector_store_manual()
-            
+            self.vector_store.clear()
             return {
                 "success": True,
                 "message": "Knowledge base cleared successfully"
@@ -177,5 +206,6 @@ Answer:""")
         except Exception as e:
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "message": f"Failed to clear knowledge base: {str(e)}"
             } 

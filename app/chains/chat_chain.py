@@ -7,8 +7,8 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.chains import LLMChain
 from langchain_community.callbacks.manager import get_openai_callback
+from langchain_core.runnables import RunnableWithMessageHistory
 
 from app.config import settings
 
@@ -35,18 +35,11 @@ class ChatChain:
             ("human", "{input}")
         ])
         
-        # Create the chain
-        self.chain = LLMChain(
-            llm=self.llm,
-            prompt=self.prompt,
-            verbose=False
-        )
+        # Create the chain using modern RunnableSequence syntax
+        self.chain = self.prompt | self.llm
         
-        # Memory for conversation history
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=True
-        )
+        # Simple in-memory storage for conversation history
+        self.conversation_history: List[Dict[str, str]] = []
     
     async def chat(self, message: str, user_id: str = "default") -> Dict[str, Any]:
         """
@@ -61,7 +54,7 @@ class ChatChain:
         """
         try:
             # Get conversation history for this user
-            chat_history = self.memory.chat_memory.messages
+            chat_history = self._format_chat_history()
             
             # Prepare inputs for the chain
             inputs = {
@@ -73,15 +66,16 @@ class ChatChain:
             with get_openai_callback() as cb:
                 response = await self.chain.ainvoke(inputs)
             
-            # Add messages to memory
-            self.memory.chat_memory.add_user_message(message)
-            self.memory.chat_memory.add_ai_message(response["text"])
+            # Add messages to conversation history
+            self.conversation_history.append({"user": message, "assistant": response.content})
             
             return {
-                "response": response["text"],
+                "response": response.content,
                 "tokens_used": cb.total_tokens,
                 "cost": cb.total_cost,
-                "model": settings.OPENAI_MODEL
+                "model": settings.OPENAI_MODEL,
+                "sources_used": 0,  # Chat chain doesn't use sources
+                "context_length": 0  # Chat chain doesn't use context
             }
                 
         except Exception as e:
@@ -93,20 +87,18 @@ class ChatChain:
                 "model": settings.OPENAI_MODEL
             }
     
+    def _format_chat_history(self) -> List:
+        """Format conversation history for the prompt"""
+        formatted_history = []
+        for msg in self.conversation_history:
+            formatted_history.append(HumanMessage(content=msg["user"]))
+            formatted_history.append(AIMessage(content=msg["assistant"]))
+        return formatted_history
+    
     def clear_memory(self, user_id: str = "default"):
         """Clear conversation memory for a user"""
-        self.memory.clear()
+        self.conversation_history.clear()
     
     def get_conversation_history(self, user_id: str = "default") -> List[Dict[str, str]]:
         """Get conversation history for a user"""
-        messages = self.memory.chat_memory.messages
-        history = []
-        
-        for i in range(0, len(messages), 2):
-            if i + 1 < len(messages):
-                history.append({
-                    "user": messages[i].content,
-                    "assistant": messages[i + 1].content
-                })
-        
-        return history 
+        return self.conversation_history 

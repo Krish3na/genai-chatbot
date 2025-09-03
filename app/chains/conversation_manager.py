@@ -18,6 +18,7 @@ class ConversationManager:
         """Initialize the conversation manager"""
         self.conversations: Dict[str, ChatChain] = {}
         self.rag_chain = RAGChain()
+        self.chat_chain = ChatChain()  # Add direct chat chain
         self.intent_classifier = IntentClassifier()
         self.user_metadata: Dict[str, Dict[str, Any]] = {}
     
@@ -68,16 +69,24 @@ class ConversationManager:
             # Determine if RAG should be used
             if use_rag is None:
                 use_rag = self.intent_classifier.should_use_rag(intent)
+            # If use_rag is explicitly set to False, respect that choice
+            
+            print(f"DEBUG: Final use_rag decision: {use_rag}, intent: {intent.value}")
             
             if use_rag:
                 # Use RAG for enhanced responses
+                print(f"DEBUG: Using RAG chain for message: {message}")
                 result = await self.rag_chain.process_query(message, user_id)
                 result["response_type"] = "rag"
+                # Ensure user has a conversation object for history tracking
+                self.get_or_create_conversation(user_id)
             else:
-                # Use regular chat
-                conversation = self.get_or_create_conversation(user_id)
-                result = await conversation.chat(message, user_id)
+                # Use regular chat (direct OpenAI without RAG)
+                print(f"DEBUG: Using Chat chain for message: {message}")
+                result = await self.chat_chain.chat(message, user_id)
                 result["response_type"] = "chat"
+                # Ensure user has a conversation object for history tracking
+                self.get_or_create_conversation(user_id)
             
             # Add intent classification metadata
             result["intent"] = intent.value
@@ -148,6 +157,20 @@ class ConversationManager:
         if user_id in self.conversations:
             return self.conversations[user_id].get_conversation_history(user_id)
         return []
+    
+    def get_document_count(self) -> int:
+        """
+        Get the number of documents in the knowledge base
+        
+        Returns:
+            Number of documents in knowledge base
+        """
+        try:
+            stats = self.get_knowledge_base_stats()
+            return stats.get("total_documents", 0)
+        except Exception as e:
+            print(f"Error getting document count: {e}")
+            return 0
     
     def get_user_stats(self, user_id: str) -> Dict[str, Any]:
         """Get statistics for a user"""

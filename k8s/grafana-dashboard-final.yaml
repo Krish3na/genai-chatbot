@@ -1,0 +1,769 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-final
+  namespace: genai-chatbot
+  labels:
+    grafana_dashboard: "1"
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /etc/grafana/provisioning/dashboards
+
+  genai-chatbot-final-dashboard.json: |
+    {
+      "title": "GenAI Chatbot - Production Monitoring",
+      "tags": ["genai", "chatbot", "ai", "monitoring", "production"],
+      "style": "dark",
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "📊 System Overview",
+          "type": "row",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": 2,
+          "title": "Total Requests",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(genai_chatbot_chat_request_duration_seconds_count) or vector(0)",
+              "legendFormat": "Total Requests"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 1000}
+                ]
+              },
+              "unit": "short",
+              "custom": {
+                "displayMode": "list",
+                "orientation": "auto"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 1
+          }
+        },
+        {
+          "id": 3,
+          "title": "Requests per Second",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "(sum(rate(genai_chatbot_chat_request_duration_seconds_count[5m])) or vector(0))",
+              "legendFormat": "RPS"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 10},
+                  {"color": "red", "value": 50}
+                ]
+              },
+              "unit": "reqps",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 1
+          }
+        },
+        {
+          "id": 4,
+          "title": "Avg Response Time",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "(sum(increase(genai_chatbot_chat_request_duration_seconds_sum[1h])) or vector(0)) / clamp_min(sum(increase(genai_chatbot_chat_request_duration_seconds_count[1h])), 1)",
+              "legendFormat": "Avg RT"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 2},
+                  {"color": "red", "value": 5}
+                ]
+              },
+              "unit": "s",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 1
+          }
+        },
+        {
+          "id": 5,
+          "title": "Success Rate",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "100",
+              "legendFormat": "Success %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 95},
+                  {"color": "green", "value": 99}
+                ]
+              },
+              "unit": "percent",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 1
+          }
+        },
+        {
+          "id": 6,
+          "title": "📈 Performance Analytics",
+          "type": "row",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          }
+        },
+        {
+          "id": 7,
+          "title": "Response Time Distribution",
+          "type": "heatmap",
+          "targets": [
+            {
+              "expr": "sum(rate(genai_chatbot_chat_request_duration_seconds_bucket[5m])) by (le)",
+              "legendFormat": "{{le}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                }
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 10
+          }
+        },
+        {
+          "id": 8,
+          "title": "Requests by Intent",
+          "type": "piechart",
+          "targets": [
+            {
+              "expr": "sum(genai_chatbot_chat_request_duration_seconds_count) by (intent)",
+              "legendFormat": "{{intent}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                }
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 10
+          }
+        },
+        {
+          "id": 9,
+          "title": "🤖 AI & Cost Analytics",
+          "type": "row",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 18
+          }
+        },
+        {
+          "id": 10,
+          "title": "Knowledge Base Documents",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "genai_chatbot_knowledge_base_documents",
+              "legendFormat": "Documents"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 1},
+                  {"color": "green", "value": 3}
+                ]
+              },
+              "unit": "short",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 19
+          }
+        },
+        {
+          "id": 11,
+          "title": "Total Cost",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(genai_chatbot_cost_total) or vector(0)",
+              "legendFormat": "Total Cost"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 10},
+                  {"color": "red", "value": 50}
+                ]
+              },
+              "unit": "currencyUSD",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 19
+          }
+        },
+        {
+          "id": 12,
+          "title": "RAG vs Direct Usage",
+          "type": "piechart",
+          "targets": [
+            {
+              "expr": "sum(genai_chatbot_chat_request_duration_seconds_count) by (response_type)",
+              "legendFormat": "{{response_type}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                }
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 19
+          }
+        },
+        {
+          "id": 13,
+          "title": "⏰ Real-time Trends",
+          "type": "row",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 27
+          }
+        },
+        {
+          "id": 14,
+          "title": "Request Rate Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "(sum(rate(genai_chatbot_chat_request_duration_seconds_count[5m])) or vector(0))",
+              "legendFormat": "Requests/sec"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "unit": "reqps"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 28
+          }
+        },
+        {
+          "id": 15,
+          "title": "Response Time Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(genai_chatbot_chat_request_duration_seconds_bucket[5m]))",
+              "legendFormat": "95th percentile"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(genai_chatbot_chat_request_duration_seconds_bucket[5m]))",
+              "legendFormat": "Median"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "unit": "s"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 28
+          }
+        },
+        {
+          "id": 16,
+          "title": "👥 User Analytics",
+          "type": "row",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 36
+          }
+        },
+        {
+          "id": 17,
+          "title": "Top Users by Requests",
+          "type": "barchart",
+          "targets": [
+            {
+              "expr": "topk(10, sum(genai_chatbot_chat_request_duration_seconds_count) by (user_id))",
+              "legendFormat": "{{user_id}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                }
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 37
+          }
+        },
+        {
+          "id": 18,
+          "title": "Intent Distribution Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "(sum(rate(genai_chatbot_chat_request_duration_seconds_count[5m])) by (intent)) or vector(0)",
+              "legendFormat": "{{intent}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "vis": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "unit": "reqps"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 37
+          }
+        },
+        {
+          "id": 19,
+          "title": "🔧 Service Health",
+          "type": "row",
+          "collapsed": false,
+          "panels": [],
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 45
+          }
+        },
+        {
+          "id": 20,
+          "title": "Service Status",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "up{job=\"genai-chatbot\"}",
+              "legendFormat": "Service Status"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "green", "value": 1}
+                ]
+              },
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 46
+          }
+        },
+        {
+          "id": 21,
+          "title": "Avg Tokens per Request",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(genai_chatbot_tokens_used_total) / clamp_min(sum(genai_chatbot_chat_request_duration_seconds_count), 1)",
+              "legendFormat": "Tokens/Request"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 100},
+                  {"color": "red", "value": 500}
+                ]
+              },
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 46
+          }
+        },
+        {
+          "id": 22,
+          "title": "Avg Cost per Request",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(genai_chatbot_cost_total) / clamp_min(sum(genai_chatbot_chat_request_duration_seconds_count), 1)",
+              "legendFormat": "Cost/Request"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 0.01},
+                  {"color": "red", "value": 0.05}
+                ]
+              },
+              "unit": "currencyUSD",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 46
+          }
+        },
+        {
+          "id": 23,
+          "title": "RAG Effectiveness",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "100",
+              "legendFormat": "RAG % (All requests use RAG)"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 50},
+                  {"color": "green", "value": 80}
+                ]
+              },
+              "unit": "percent",
+              "custom": {
+                "displayMode": "list"
+              }
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 46
+          }
+        }
+      ],
+      "templating": {
+        "list": [
+          {
+            "name": "user_id",
+            "type": "query",
+            "query": "label_values(genai_chatbot_chat_request_duration_seconds_count, user_id)",
+            "refresh": 2,
+            "includeAll": true,
+            "multi": true
+          },
+          {
+            "name": "intent",
+            "type": "query",
+            "query": "label_values(genai_chatbot_chat_request_duration_seconds_count, intent)",
+            "refresh": 2,
+            "includeAll": true,
+            "multi": true
+          }
+        ]
+      },
+      "annotations": {
+        "list": [
+          {
+            "name": "Deployments",
+            "datasource": "Prometheus",
+            "expr": "changes(genai_chatbot_version[5m]) > 0",
+            "titleFormat": "Deployment",
+            "textFormat": "New version deployed"
+          }
+        ]
+      }
+    }

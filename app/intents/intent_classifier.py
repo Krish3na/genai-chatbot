@@ -5,6 +5,8 @@ import re
 from typing import Dict, Any, Tuple
 from enum import Enum
 
+from app.utils.metrics import record_intent_classification
+
 class IntentType(Enum):
     """Enumeration of possible intent types"""
     GENERAL = "general"
@@ -83,6 +85,9 @@ class IntentClassifier:
         
         # Normalize confidence score (0.5 to 1.0)
         confidence = min(0.5 + (best_intent[1] * 0.5), 1.0)
+        
+        # Record intent classification metrics
+        record_intent_classification(best_intent[0].value, confidence)
         
         return best_intent[0], confidence
     

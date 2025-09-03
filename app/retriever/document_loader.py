@@ -11,13 +11,15 @@ from langchain.schema import Document
 class DocumentLoader:
     """Load documents from various file formats for RAG"""
     
-    def __init__(self, data_dir: str = "data"):
+    def __init__(self, data_dir: str = None):
         """
         Initialize document loader
         
         Args:
             data_dir: Directory containing documents
         """
+        if data_dir is None:
+            data_dir = os.getenv("DATA_DIR", "data")
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
     

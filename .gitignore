@@ -1,68 +1,33 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
+﻿# Environment variables
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+.env.local
+.env.production
 
-# IDE
+# API Keys and secrets
+**/secret.yaml
+**/secrets.yaml
+**/*secret*.yaml
+**/*key*.yaml
+*.key
+*.pem
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
+# OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
-
-# Database
-*.db
-*.sqlite3
-
-# ChromaDB
-chroma_db/
-
-# Docker
-.dockerignore
-
-# Kubernetes
-*.kubeconfig
-
-# Temporary files
-*.tmp
-*.temp 
+# Test results
+*test_results*.json
+comprehensive_test_results*.json
+stress_test_results*.json

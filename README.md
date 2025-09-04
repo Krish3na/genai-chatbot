@@ -4,14 +4,17 @@
 
 Watch the complete system demonstration showcasing all features, monitoring capabilities, and production deployment:
 
-<video width="100%" controls>
-  <source src="https://github.com/Krish3na/genai-chatbot/raw/main/SampleDemo.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+> **To add the video player here, you need to:**
+> 1. Go to GitHub Issues or create a new README edit
+> 2. Drag and drop your `SampleDemo.mp4` file into the text area
+> 3. GitHub will generate a proper video embed URL
+> 4. Copy that URL and replace this section
+
+**For now, you can watch the demo video here:**
+
+📹 **[▶️ Watch Full Demo Video (21MB)](https://github.com/Krish3na/genai-chatbot/raw/main/SampleDemo.mp4)**
 
 *The video demonstrates the full GenAI Chatbot system including real-time monitoring, MLflow integration, Kubernetes deployment, and comprehensive testing suite.*
-
-📹 **[Download Full Demo Video (21MB)](https://github.com/Krish3na/genai-chatbot/raw/main/SampleDemo.mp4)**
 
 ---
 

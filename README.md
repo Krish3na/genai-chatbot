@@ -1,5 +1,15 @@
 # 🚀 Production-Grade GenAI Chatbot
 
+## 🎥 Demo Video
+
+Watch the complete system demonstration showcasing all features, monitoring capabilities, and production deployment:
+
+https://github.com/user-attachments/assets/Sample_Demo.mp4
+
+*The video demonstrates the full GenAI Chatbot system including real-time monitoring, MLflow integration, Kubernetes deployment, and comprehensive testing suite.*
+
+---
+
 A comprehensive, production-ready GenAI Chatbot built with modern technologies including OpenAI GPT-4, LangChain, Docker, Kubernetes, and comprehensive Prometheus/Grafana monitoring. Features 17 custom metrics, end-to-end testing suite, and 100% verified accuracy.
 
 ## 🏗️ Architecture
@@ -35,10 +45,12 @@ A comprehensive, production-ready GenAI Chatbot built with modern technologies i
 
 ### 📊 Monitoring & Observability
 - **17 Custom Metrics**: Comprehensive tracking of all system aspects
+- **MLflow Integration**: Complete experiment tracking and model management
 - **Real-time Dashboards**: Production-ready Grafana visualization
 - **100% Verified Accuracy**: All metrics cross-validated with actual system behavior
-- **End-to-End Testing**: Python test suite with 3 comprehensive test files
+- **End-to-End Testing**: Python test suite with 4 comprehensive test files
 - **Performance Analytics**: Response times, token usage, cost tracking, RAG effectiveness
+- **Experiment Management**: Track model performance, hyperparameters, and artifacts
 
 ## 🚀 Quick Start
 
@@ -63,16 +75,22 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 ### 3. Local Development
 ```bash
-# Run locally
+# Run locally (basic)
 poetry run python run.py
 
-# Or with Docker
-./docker-run.ps1
+# Run with MLflow integration
+./start-with-mlflow.ps1
+
+# Or run just MLflow server
+./start-mlflow.ps1
 ```
 
 ### 4. Kubernetes Deployment
 ```bash
-# Deploy to Kubernetes
+# Deploy with MLflow integration
+./deploy-k8s-with-mlflow.ps1
+
+# Or deploy manually
 kubectl apply -f k8s/
 
 # Access the application
@@ -97,6 +115,12 @@ kubectl apply -f k8s/
 ### Monitoring Endpoints
 - `GET /metrics` - Prometheus metrics
 - `GET /intents/info` - Intent classification info
+
+### MLflow Endpoints
+- `GET /mlflow/system-metrics` - Log system metrics to MLflow
+- `GET /mlflow/model-performance` - Log model performance to MLflow
+- `GET /mlflow/experiments` - Get MLflow experiment runs
+- `GET /mlflow/best-run` - Get best performing run
 
 ## 🐳 Docker
 
@@ -245,6 +269,7 @@ This project is licensed under the MIT License.
 - **`1-simple-test.py`**: Quick health check (5 basic tests)
 - **`2-comprehensive-test.py`**: Full functional testing (15+ scenarios)
 - **`3-stress-test.py`**: Load testing & edge cases (concurrent requests)
+- **`test-mlflow-integration.py`**: MLflow integration testing (9 comprehensive tests)
 
 ### Usage
 ```bash
@@ -256,6 +281,9 @@ python 2-comprehensive-test.py --verbose
 
 # Load testing
 python 3-stress-test.py --requests 20 --concurrent 5
+
+# MLflow integration testing
+python test-mlflow-integration.py --verbose
 ```
 
 ### Test Results
@@ -264,12 +292,43 @@ python 3-stress-test.py --requests 20 --concurrent 5
 - **Stress Test**: 100% success rate under load
 - **All metrics verified**: 44 requests processed, $1.21 total cost
 
+## 📊 MLflow Integration
+
+### Features
+- **Experiment Tracking**: Automatic logging of all chat interactions
+- **Model Performance**: Track accuracy, precision, recall, F1-score
+- **System Metrics**: Monitor active conversations, document count, error rates
+- **Cost Tracking**: Track OpenAI API usage and costs
+- **Artifact Storage**: Store conversation logs and model artifacts
+- **Hyperparameter Tracking**: Track model configurations and settings
+
+### MLflow UI Access
+- **Local**: http://localhost:5000 (when using Docker Compose)
+- **Kubernetes**: `kubectl port-forward service/mlflow-service 5000:5000 -n genai-chatbot`
+
+### Key Metrics Tracked
+- Response duration and latency
+- Token usage and costs
+- RAG effectiveness (sources used, context length)
+- Intent classification confidence
+- System performance (active conversations, error rates)
+- Model performance metrics (accuracy, precision, recall, F1)
+
+### Environment Variables
+```bash
+MLFLOW_TRACKING_URI=http://localhost:5000
+MLFLOW_ENABLED=true
+MLFLOW_EXPERIMENT_NAME=genai-chatbot
+MLFLOW_AUTO_LOG=true
+```
+
 ## 🆘 Support
 
 For issues and questions:
 - Create GitHub issue
 - Check documentation
 - Review logs and metrics
+- Check MLflow UI for experiment tracking
 - Run test suite for validation
 
 ---

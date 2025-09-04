@@ -4,13 +4,7 @@
 
 Watch the complete system demonstration showcasing all features, monitoring capabilities, and production deployment:
 
-> **To add the video player here, you need to:**
-> 1. Go to GitHub Issues or create a new README edit
-> 2. Drag and drop your `SampleDemo.mp4` file into the text area
-> 3. GitHub will generate a proper video embed URL
-> 4. Copy that URL and replace this section
-
-**For now, you can watch the demo video here:**
+https://github.com/user-attachments/assets/e77ab715-3edb-4573-a7db-b833f292d7a5
 
 📹 **[▶️ Watch Full Demo Video (21MB)](https://github.com/Krish3na/genai-chatbot/raw/main/SampleDemo.mp4)**
 

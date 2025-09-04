@@ -4,11 +4,9 @@
 
 Watch the complete system demonstration showcasing all features, monitoring capabilities, and production deployment:
 
-https://github.com/Krish3na/genai-chatbot/raw/main/Sample_Demo.mp4
+https://github.com/Krish3na/genai-chatbot/raw/main/SampleDemo.mp4
 
 *The video demonstrates the full GenAI Chatbot system including real-time monitoring, MLflow integration, Kubernetes deployment, and comprehensive testing suite.*
-
-> **Note**: The video file is stored using Git LFS (Large File Storage) due to its size. If you're cloning the repository, make sure to have Git LFS installed to properly download the video file.
 
 ---
 

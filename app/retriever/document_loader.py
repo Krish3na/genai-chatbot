@@ -5,7 +5,7 @@ import os
 from typing import List, Optional
 from pathlib import Path
 
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, CSVLoader
 from langchain.schema import Document
 
 class DocumentLoader:
@@ -31,11 +31,29 @@ class DocumentLoader:
             file_path: Path to PDF file
             
         Returns:
-            List of document chunks
+            List of document chunks (one per page)
         """
         try:
             loader = PyPDFLoader(file_path)
-            return loader.load()
+            documents = loader.load()
+            
+            # Add file-level metadata to distinguish pages from separate files
+            file_name = Path(file_path).name
+            for i, doc in enumerate(documents):
+                if doc.metadata:
+                    doc.metadata['file_name'] = file_name
+                    doc.metadata['page_number'] = i + 1
+                    doc.metadata['total_pages'] = len(documents)
+                else:
+                    doc.metadata = {
+                        'source': file_path,
+                        'file_name': file_name,
+                        'page_number': i + 1,
+                        'total_pages': len(documents)
+                    }
+            
+            print(f"Loaded PDF {file_name}: {len(documents)} pages")
+            return documents
         except Exception as e:
             print(f"Error loading PDF {file_path}: {e}")
             return []
@@ -57,6 +75,50 @@ class DocumentLoader:
             print(f"Error loading text file {file_path}: {e}")
             return []
     
+    def load_csv(self, file_path: str) -> List[Document]:
+        """
+        Load CSV document
+        
+        Args:
+            file_path: Path to CSV file
+            
+        Returns:
+            List of document chunks
+        """
+        try:
+            loader = CSVLoader(file_path)
+            return loader.load()
+        except Exception as e:
+            print(f"Error loading CSV file {file_path}: {e}")
+            return []
+    
+    async def load_and_chunk_document(self, file_path: str) -> List[Document]:
+        """
+        Load and chunk a single document based on its file type
+        
+        Args:
+            file_path: Path to the document file
+            
+        Returns:
+            List of document chunks
+        """
+        try:
+            file_path = Path(file_path)
+            
+            if file_path.suffix.lower() == '.pdf':
+                return self.load_pdf(str(file_path))
+            elif file_path.suffix.lower() == '.txt':
+                return self.load_text(str(file_path))
+            elif file_path.suffix.lower() == '.csv':
+                return self.load_csv(str(file_path))
+            else:
+                print(f"Unsupported file type: {file_path.suffix}")
+                return []
+                
+        except Exception as e:
+            print(f"Error loading and chunking document {file_path}: {e}")
+            return []
+    
     def load_all_documents(self) -> List[Document]:
         """
         Load all documents from the data directory
@@ -73,6 +135,10 @@ class DocumentLoader:
         # Load text files
         for text_file in self.data_dir.glob("*.txt"):
             documents.extend(self.load_text(str(text_file)))
+        
+        # Load CSV files
+        for csv_file in self.data_dir.glob("*.csv"):
+            documents.extend(self.load_csv(str(csv_file)))
         
         return documents
     
@@ -92,5 +158,9 @@ class DocumentLoader:
         # Text files
         for text_file in self.data_dir.glob("*.txt"):
             files.append(text_file.name)
+        
+        # CSV files
+        for csv_file in self.data_dir.glob("*.csv"):
+            files.append(csv_file.name)
         
         return files 

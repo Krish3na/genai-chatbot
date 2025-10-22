@@ -1,0 +1,2 @@
+# This directory stores MLflow experiment tracking data
+# The actual run data is ignored by .gitignore

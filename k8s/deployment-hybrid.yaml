@@ -30,6 +30,12 @@ spec:
             secretKeyRef:
               name: genai-chatbot-secret
               key: openai-api-key
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow-service:5000"
+        - name: MLFLOW_ENABLED
+          value: "true"
+        - name: ENVIRONMENT
+          value: "kubernetes"
         - name: OPENAI_MODEL
           valueFrom:
             configMapKeyRef:

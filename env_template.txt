@@ -1,0 +1,37 @@
+# GenAI Chatbot Configuration Template
+# Copy this to .env and fill in your values
+
+# OpenAI API Configuration
+OPENAI_API_KEY=your-openai-api-key-here
+OPENAI_MODEL=gpt-4
+OPENAI_TEMPERATURE=0.7
+OPENAI_MAX_TOKENS=1000
+
+# MLflow Configuration
+MLFLOW_ENABLED=true
+MLFLOW_TRACKING_URI=http://localhost:5000
+MLFLOW_EXPERIMENT_NAME=genai-chatbot
+
+# Email Alert Configuration
+EMAIL_ALERTS_ENABLED=true
+SENDER_EMAIL=your-email@gmail.com
+SENDER_PASSWORD=your-gmail-app-password
+ALERT_RECIPIENTS=saikrishna.sriram3@gmail.com
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+
+# RAG Configuration
+RAG_TOP_K=5
+RAG_SIMILARITY_THRESHOLD=0.7
+
+# Intent Classification
+INTENT_CONFIDENCE_THRESHOLD=0.8
+
+# Application Settings
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=false
+ENVIRONMENT=development

@@ -1,278 +1,236 @@
-# Kubernetes Deployment for GenAI Chatbot
+# GenAI Chatbot - Kubernetes Monitoring Setup
 
-This directory contains all the Kubernetes manifests and deployment scripts for the GenAI Chatbot.
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Ingress       │    │   Service       │    │   Deployment    │
-│   (nginx)       │───▶│   (Load Bal.)   │───▶│   (3 replicas)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                       │
-                                                       ▼
-                                              ┌─────────────────┐
-                                              │   PVC           │
-                                              │   (Data/Chroma) │
-                                              └─────────────────┘
-```
-
-## 📁 Files Overview
-
-| File | Purpose |
-|------|---------|
-| `namespace.yaml` | Creates isolated namespace |
-| `configmap.yaml` | Environment variables |
-| `secret.yaml` | Sensitive data (API keys) |
-| `deployment.yaml` | Application deployment |
-| `service.yaml` | Load balancer |
-| `ingress.yaml` | External access |
-| `persistent-volume-claims.yaml` | Data persistence |
-| `horizontal-pod-autoscaler.yaml` | Auto-scaling |
-| `deploy.sh` | Linux/Mac deployment script |
-| `deploy.ps1` | Windows deployment script |
+This directory contains the complete monitoring stack for the GenAI Chatbot, including automatic dashboard provisioning and metrics collection.
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Automated Setup (Recommended)
 
-1. **Kubernetes Cluster**
-   ```bash
-   # Option 1: Docker Desktop (Windows/Mac)
-   # Enable Kubernetes in Docker Desktop settings
+Run the automated setup script to deploy everything:
 
-   # Option 2: Minikube
-   minikube start
-
-   # Option 3: Kind
-   kind create cluster
-   ```
-
-2. **kubectl**
-   ```bash
-   # Install kubectl
-   # https://kubernetes.io/docs/tasks/tools/
-   ```
-
-3. **Docker**
-   ```bash
-   # Ensure Docker is running
-   docker info
-   ```
-
-### Deployment
-
-#### Linux/Mac:
-```bash
-chmod +x k8s/deploy.sh
-./k8s/deploy.sh
-```
-
-#### Windows:
 ```powershell
-.\k8s\deploy.ps1
+# Navigate to the k8s directory
+cd k8s
+
+# Run the automated setup
+.\automated-monitoring-setup.ps1
 ```
 
-#### Manual:
-```bash
-# Build image
-docker build -t genai-chatbot:latest .
+This will automatically:
+- Deploy Prometheus with custom configuration
+- Deploy Grafana with pre-configured dashboards
+- Set up automatic metrics collection
+- Configure port-forwarding for local access
+- Test the setup
 
-# Apply manifests
-kubectl apply -f k8s/
-```
+### Manual Setup
 
-## 🔧 Configuration
+If you prefer manual setup, follow these steps:
 
-### Update API Key
-
-1. **Encode your API key:**
+1. **Create namespace:**
    ```bash
-   echo -n "your-openai-api-key" | base64
+   kubectl apply -f namespace.yaml
    ```
 
-2. **Update `k8s/secret.yaml`:**
-   ```yaml
-   data:
-     OPENAI_API_KEY: "your-base64-encoded-key"
+2. **Deploy storage:**
+   ```bash
+   kubectl apply -f persistent-volume-claims.yaml
    ```
 
-### Customize Resources
+3. **Deploy Prometheus:**
+   ```bash
+   kubectl apply -f prometheus-serviceaccount.yaml
+   kubectl apply -f prometheus-configmap.yaml
+   kubectl apply -f prometheus-deployment.yaml
+   kubectl apply -f prometheus-service.yaml
+   ```
 
-Edit `k8s/deployment.yaml`:
-```yaml
-resources:
-  requests:
-    memory: "512Mi"    # Minimum
-    cpu: "250m"
-  limits:
-    memory: "1Gi"      # Maximum
-    cpu: "500m"
-```
+4. **Deploy Grafana:**
+   ```bash
+   kubectl apply -f grafana-datasources-configmap.yaml
+   kubectl apply -f grafana-dashboard-complete.yaml
+   kubectl apply -f grafana-deployment-final.yaml
+   kubectl apply -f grafana-service.yaml
+   ```
 
-### Auto-scaling
+5. **Deploy ingress (optional):**
+   ```bash
+   kubectl apply -f monitoring-ingress.yaml
+   ```
 
-Edit `k8s/horizontal-pod-autoscaler.yaml`:
-```yaml
-minReplicas: 2        # Minimum pods
-maxReplicas: 10       # Maximum pods
-averageUtilization: 70 # CPU threshold
-```
+## 📊 Access Information
 
-## 🌐 Access
+After deployment, access the monitoring tools:
 
-### Port Forward (Local)
+### Grafana Dashboard
+- **URL:** http://localhost:3000
+- **Username:** admin
+- **Password:** admin123
+- **Features:**
+  - Automatic dashboard provisioning
+  - Real-time metrics visualization
+  - Pre-configured GenAI Chatbot dashboard
+  - Response time monitoring
+  - Token usage tracking
+  - Error rate alerts
+  - RAG performance metrics
+  - Cost tracking
+
+### Prometheus Metrics
+- **URL:** http://localhost:9090
+- **Features:**
+  - Raw metrics collection
+  - Query interface
+  - Alert rules
+  - Service discovery
+
+## 📈 Available Metrics
+
+The monitoring stack collects the following metrics:
+
+### Chat Metrics
+- `genai_chatbot_chat_requests_total` - Total chat requests
+- `genai_chatbot_chat_request_duration_seconds` - Response time
+- `genai_chatbot_tokens_used_total` - Token usage
+- `genai_chatbot_cost_total` - Cost tracking
+
+### RAG Metrics
+- `genai_chatbot_rag_requests_total` - RAG requests
+- `genai_chatbot_rag_sources_used` - Sources used
+- `genai_chatbot_rag_context_length` - Context length
+
+### Document Metrics
+- `genai_chatbot_document_uploads_total` - Document uploads
+- `genai_chatbot_document_deletions_total` - Document deletions
+- `genai_chatbot_knowledge_base_documents` - Document count
+
+### System Metrics
+- `genai_chatbot_active_conversations` - Active conversations
+- `genai_chatbot_intent_classifications_total` - Intent classifications
+- `genai_chatbot_errors_total` - Error tracking
+
+## 🎯 Dashboard Features
+
+The Grafana dashboard includes:
+
+### Real-time Monitoring
+- **Chat Requests per Second** - Live request rate
+- **Response Time (95th percentile)** - Performance monitoring
+- **Token Usage Rate** - Cost optimization
+- **Error Rate** - System health
+
+### Performance Analytics
+- **Response Time Over Time** - Trend analysis
+- **Chat Requests by Intent** - Usage patterns
+- **RAG Performance** - Knowledge base effectiveness
+- **Cost Tracking** - Budget monitoring
+
+### System Health
+- **Active Conversations** - User engagement
+- **Knowledge Base Documents** - Content management
+- **Document Uploads** - Content activity
+- **Intent Classification** - AI accuracy
+
+## 🔧 Configuration Files
+
+### Prometheus Configuration
+- `prometheus-configmap.yaml` - Scraping rules and alerting
+- `prometheus-deployment.yaml` - Deployment configuration
+- `prometheus-service.yaml` - Service exposure
+
+### Grafana Configuration
+- `grafana-dashboard-complete.yaml` - Complete dashboard with all metrics
+- `grafana-datasources-configmap.yaml` - Prometheus data source
+- `grafana-deployment-final.yaml` - Deployment with auto-provisioning
+
+### Storage
+- `persistent-volume-claims.yaml` - Persistent storage for metrics and dashboards
+
+## 🧪 Testing
+
+Generate test traffic to populate the dashboard:
+
 ```bash
-kubectl port-forward svc/genai-chatbot-service 8080:80 -n genai-chatbot
-# Access: http://localhost:8080
+# Run the test script
+python test_metrics.py
 ```
 
-### Ingress (External)
-```bash
-# Add to /etc/hosts (Linux/Mac) or C:\Windows\System32\drivers\etc\hosts (Windows)
-127.0.0.1 genai-chatbot.local
+This will:
+- Send test requests to the chatbot
+- Generate metrics for the dashboard
+- Verify endpoint accessibility
+- Create sample data for visualization
 
-# Access: http://genai-chatbot.local
-```
+## 🚨 Alerts
 
-## 📊 Monitoring
+The monitoring stack includes pre-configured alerts:
 
-### Check Status
-```bash
-# Pods
-kubectl get pods -n genai-chatbot
-
-# Services
-kubectl get services -n genai-chatbot
-
-# Ingress
-kubectl get ingress -n genai-chatbot
-
-# HPA
-kubectl get hpa -n genai-chatbot
-```
-
-### View Logs
-```bash
-# All pods
-kubectl logs -f deployment/genai-chatbot -n genai-chatbot
-
-# Specific pod
-kubectl logs -f <pod-name> -n genai-chatbot
-```
-
-### Scale Manually
-```bash
-# Scale up
-kubectl scale deployment genai-chatbot --replicas=5 -n genai-chatbot
-
-# Scale down
-kubectl scale deployment genai-chatbot --replicas=1 -n genai-chatbot
-```
-
-## 🔄 Updates
-
-### Rolling Update
-```bash
-# Update image
-docker build -t genai-chatbot:v1.1 .
-kubectl set image deployment/genai-chatbot genai-chatbot=genai-chatbot:v1.1 -n genai-chatbot
-```
-
-### Blue-Green Deployment
-```bash
-# Deploy new version
-kubectl apply -f k8s/deployment-v2.yaml
-
-# Switch traffic
-kubectl patch service genai-chatbot-service -p '{"spec":{"selector":{"version":"v2"}}}'
-```
-
-## 🧹 Cleanup
-
-### Delete Everything
-```bash
-kubectl delete namespace genai-chatbot
-```
-
-### Delete Specific Resources
-```bash
-kubectl delete deployment genai-chatbot -n genai-chatbot
-kubectl delete service genai-chatbot-service -n genai-chatbot
-kubectl delete ingress genai-chatbot-ingress -n genai-chatbot
-```
+- **High Error Rate** - When error rate > 0.1/sec
+- **High Response Time** - When 95th percentile > 5 seconds
+- **High Token Usage** - When usage > 1000 tokens/sec
+- **Service Down** - When chatbot service is unavailable
 
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
-1. **Image Pull Error**
+1. **Dashboard not loading:**
+   - Check if Grafana pod is running: `kubectl get pods -n genai-chatbot`
+   - Verify port-forwarding: `kubectl port-forward service/grafana-service 3000:3000 -n genai-chatbot`
+
+2. **No metrics appearing:**
+   - Check Prometheus targets: http://localhost:9090/targets
+   - Verify chatbot service is running
+   - Check metrics endpoint: `curl http://localhost:8000/metrics`
+
+3. **Port-forwarding issues:**
+   - Kill existing port-forwards: `Get-Process kubectl | Stop-Process`
+   - Restart port-forwarding manually
+
+### Useful Commands
+
    ```bash
-   # Load image to local cluster
-   kind load docker-image genai-chatbot:latest
-   # or
-   minikube image load genai-chatbot:latest
-   ```
+# Check pod status
+kubectl get pods -n genai-chatbot
 
-2. **PVC Pending**
-   ```bash
-   # Check storage class
-   kubectl get storageclass
-   
-   # Update PVC if needed
-   kubectl patch pvc genai-chatbot-data-pvc -p '{"spec":{"storageClassName":"standard"}}'
-   ```
+# Check services
+kubectl get services -n genai-chatbot
 
-3. **Ingress Not Working**
-   ```bash
-   # Check ingress controller
-   kubectl get pods -n ingress-nginx
-   
-   # Install nginx ingress
-   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
-   ```
+# View logs
+kubectl logs deployment/grafana -n genai-chatbot
+kubectl logs deployment/prometheus -n genai-chatbot
 
-### Debug Commands
-```bash
-# Describe resources
-kubectl describe pod <pod-name> -n genai-chatbot
-kubectl describe service genai-chatbot-service -n genai-chatbot
-
-# Check events
-kubectl get events -n genai-chatbot --sort-by='.lastTimestamp'
-
-# Exec into pod
-kubectl exec -it <pod-name> -n genai-chatbot -- /bin/bash
+# Access pods directly
+kubectl exec -it deployment/grafana -n genai-chatbot -- /bin/sh
 ```
 
-## 📈 Production Considerations
+## 📝 Customization
 
-### Security
-- Use secrets for sensitive data
-- Enable RBAC
-- Network policies
-- Pod security policies
+### Adding New Metrics
 
-### Monitoring
-- Prometheus + Grafana
-- Application metrics
-- Resource monitoring
+1. Add metrics to `app/utils/metrics.py`
+2. Update the dashboard in `grafana-dashboard-complete.yaml`
+3. Redeploy the dashboard: `kubectl apply -f grafana-dashboard-complete.yaml`
 
-### Backup
-- PVC snapshots
-- Application data backup
-- Configuration backup
+### Modifying Alerts
 
-### High Availability
-- Multi-zone deployment
-- Load balancer
-- Auto-scaling
-- Health checks
+Edit `prometheus-configmap.yaml` and redeploy:
+```bash
+kubectl apply -f prometheus-configmap.yaml
+```
 
-## 🎯 Next Steps
+### Custom Dashboards
 
-1. **CI/CD Pipeline** - Jenkins/GitHub Actions
-2. **Monitoring** - Prometheus/Grafana
-3. **Security** - RBAC, Network Policies
-4. **Backup** - Velero for disaster recovery
-5. **Advanced Features** - Service Mesh (Istio) 
+Create new dashboard JSON and add to `grafana-dashboard-complete.yaml`.
+
+## 🎉 Success!
+
+Once deployed, you'll have:
+- ✅ Automatic dashboard provisioning
+- ✅ Real-time metrics collection
+- ✅ Performance monitoring
+- ✅ Cost tracking
+- ✅ Error alerting
+- ✅ RAG performance analytics
+
+The monitoring stack will automatically collect and visualize all GenAI chatbot metrics without manual intervention! 

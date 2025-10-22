@@ -1,0 +1,2 @@
+# This directory stores ChromaDB vector database files
+# The actual database files are ignored by .gitignore

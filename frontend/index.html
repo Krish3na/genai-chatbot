@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Chatbot - Dashboard</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-robot"></i> GenAI Bot</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="alerts.html" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Alerts</span>
+                        <span class="badge" id="alertBadge">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="mlflow.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>MLflow</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="grafana.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Grafana</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="prometheus.html" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span>Prometheus</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot" id="systemStatus"></span>
+                    <span class="status-text">System Status</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Dashboard Overview</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="refreshDashboard()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <button class="user-access-btn" onclick="switchToUserView()" title="Switch to User Portal">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <div class="user-menu" onclick="toggleUserMenu()">
+                        <span class="user-name">Admin</span>
+                        <i class="fas fa-user-circle"></i>
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="dropdown-item" onclick="switchToUserView()">
+                                <i class="fas fa-user"></i> User Portal
+                            </div>
+                            <div class="dropdown-item" onclick="adminLogout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <!-- Quick Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalChats">0</h3>
+                            <p>Total Conversations</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avgResponseTime">0ms</h3>
+                            <p>Avg Response Time</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card alert-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="activeAlerts">0</h3>
+                            <p>Active Alerts</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="dailyCost">$0.00</h3>
+                            <p>Daily Cost</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Alerts -->
+                <div class="content-grid">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                            <a href="chat.html" class="view-all-link">View All</a>
+                        </div>
+                        <div class="activity-list" id="recentActivity">
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-comment"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p>New conversation started</p>
+                                    <small>2 minutes ago</small>
+                                </div>
+                            </div>
+                            <!-- More activity items will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <div class="content-card alerts-preview">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bell"></i> Recent Alerts</h3>
+                            <a href="alerts.html" class="view-all-link">View All</a>
+                        </div>
+                        <div class="alerts-list" id="recentAlerts">
+                            <div class="alert-item">
+                                <div class="alert-icon warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="alert-content">
+                                    <p>Response time above threshold</p>
+                                    <small>5 minutes ago</small>
+                                </div>
+                            </div>
+                            <!-- More alerts will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Health Overview -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-heartbeat"></i> System Health</h3>
+                    </div>
+                    <div class="health-grid">
+                        <div class="health-item">
+                            <div class="health-label">API Server</div>
+                            <div class="health-status" id="apiStatus">
+                                <span class="status-dot healthy"></span>
+                                <span>Healthy</span>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-label">MLflow</div>
+                            <div class="health-status" id="mlflowStatus">
+                                <span class="status-dot healthy"></span>
+                                <span>Healthy</span>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-label">Database</div>
+                            <div class="health-status" id="dbStatus">
+                                <span class="status-dot healthy"></span>
+                                <span>Healthy</span>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-label">Email Alerts</div>
+                            <div class="health-status" id="emailStatus">
+                                <span class="status-dot warning"></span>
+                                <span>Not Configured</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js?v=3"></script>
+    <script src="js/dashboard.js?v=3"></script>
+</body>
+</html>

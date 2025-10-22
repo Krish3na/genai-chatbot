@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Chatbot - Chat Interface</title>
+    <link rel="stylesheet" href="styles/main.css?v=5">
+    <link rel="stylesheet" href="styles/chat.css?v=11">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Collapsible Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <!-- Sidebar Toggle Button -->
+            <div class="sidebar-toggle-btn" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            
+            <!-- Top Section - Navigation -->
+            <div class="nav-section">
+                <button class="new-chat-btn" id="newChatBtn" title="Start New Chat">
+                    <i class="fas fa-plus"></i> 
+                    <span class="btn-text">New chat</span>
+                </button>
+                
+                <!-- Navigation menu removed for cleaner chat interface -->
+            </div>
+            
+            <!-- Bottom Section - Chat History -->
+            <div class="chat-section">
+                <div class="chat-section-header">
+                    <i class="fas fa-history"></i>
+                    <span class="section-text">Recent Chats</span>
+                </div>
+                <div class="chat-list" id="chatList">
+                    <!-- Chat history items will be dynamically added here -->
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="clear-all-btn" id="clearAllChats" title="Clear All Chat History">
+                    <i class="fas fa-trash"></i>
+                    <span>Clear All</span>
+                </button>
+                <div class="status-indicator">
+                    <span class="status-dot healthy" id="systemStatus"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+            </div>
+        </nav>
+
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- External Toggle Button (visible when sidebar is collapsed) -->
+            <button class="external-toggle-btn" id="externalToggle" style="display: none;">
+                <i class="fas fa-bars"></i>
+                <span class="toggle-tooltip">Open sidebar</span>
+            </button>
+            
+            <div class="chat-container">
+                <!-- Chat Header -->
+                <header class="chat-header">
+                    <div class="chat-title">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat with AI Assistant</span>
+                        <div class="mode-indicator" id="modeIndicator">
+                            <span class="mode-badge direct-mode" id="modeBadge">
+                                <i class="fas fa-bolt"></i>
+                                Direct Mode
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chat-controls">
+                        <div class="mode-toggle-container">
+                            <label class="mode-toggle" title="Toggle between Direct and RAG modes">
+                                <input type="checkbox" id="ragModeToggle">
+                                <span class="toggle-slider">
+                                    <span class="toggle-label-left">Direct</span>
+                                    <span class="toggle-label-right">RAG</span>
+                                </span>
+                            </label>
+                        </div>
+                        <button class="btn" id="clearChat" title="Clear Chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn" id="exportChat" title="Export Chat" onclick="chatInterface.exportChat()">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <!-- Settings button removed for cleaner interface -->
+                    </div>
+                </header>
+
+                <!-- Mode Information Panel -->
+                <div class="mode-info-panel" id="modeInfoPanel">
+                    <!-- Direct Mode Info -->
+                    <div class="mode-info direct-mode-info active" id="directModeInfo">
+                        <div class="mode-info-content">
+                            <div class="mode-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="mode-details">
+                                <h3>Direct Mode</h3>
+                                <p>Chat directly with OpenAI's GPT model. Fast responses using the model's pre-trained knowledge.</p>
+                                <div class="mode-features">
+                                    <span class="feature-tag"><i class="fas fa-zap"></i> Fast responses</span>
+                                    <span class="feature-tag"><i class="fas fa-globe"></i> General knowledge</span>
+                                    <span class="feature-tag"><i class="fas fa-clock"></i> Real-time</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RAG Mode Info -->
+                    <div class="mode-info rag-mode-info" id="ragModeInfo">
+                        <div class="mode-info-content">
+                            <div class="mode-icon">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <div class="mode-details">
+                                <h3>RAG Mode (Retrieval-Augmented Generation)</h3>
+                                <p>Upload documents to create a custom knowledge base. The AI will use your documents to provide more accurate, context-aware responses.</p>
+                                <div class="mode-features">
+                                    <span class="feature-tag"><i class="fas fa-file-alt"></i> Document-based</span>
+                                    <span class="feature-tag"><i class="fas fa-search"></i> Context-aware</span>
+                                    <span class="feature-tag"><i class="fas fa-bullseye"></i> More accurate</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compact Document Upload (RAG Mode) -->
+                <div class="compact-upload-section" id="compactUploadSection">
+                    <!-- Knowledge Base Status Bar -->
+                    <div class="kb-status-bar" id="kbStatusBar">
+                        <div class="kb-status-info">
+                            <i class="fas fa-file-alt kb-icon"></i>
+                            <span class="kb-text" id="kbStatusText">Knowledge Base: <span id="documentCount">0</span> docs, <span id="chunkCount">0</span> chunks</span>
+                        </div>
+                        
+                        <!-- File Upload Button -->
+                        <div class="upload-button-container">
+                            <button class="upload-btn" id="uploadBtn" title="Upload Documents">
+                                <i class="fas fa-plus"></i>
+                                <span class="upload-btn-text">Add Files</span>
+                            </button>
+                            <input type="file" id="fileInput" class="file-input" multiple accept=".pdf,.doc,.docx,.txt,.csv,.json">
+                        </div>
+                        
+                        <!-- Files Preview -->
+                        <div class="files-preview" id="filesPreview">
+                            <!-- Files will be shown as small chips here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Tooltip (Hidden by default) -->
+                    <div class="upload-tooltip" id="uploadTooltip">
+                        <div class="tooltip-header">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Upload Documents</span>
+                        </div>
+                        <div class="tooltip-content">
+                            <p>Add documents to enhance AI responses with your content</p>
+                            <div class="supported-formats">
+                                <strong>Supported formats:</strong>
+                                <div class="format-tags">
+                                    <span class="format-tag">PDF</span>
+                                    <span class="format-tag">DOC</span>
+                                    <span class="format-tag">DOCX</span>
+                                    <span class="format-tag">TXT</span>
+                                    <span class="format-tag">CSV</span>
+                                    <span class="format-tag">JSON</span>
+                                </div>
+                                <small>Max 10MB each</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="typing-text">
+                        <span>AI is typing</span>
+                        <div class="typing-dots">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="chat-input-area">
+                    <div class="input-container">
+                        <div class="input-actions">
+                            <button class="action-button" title="Attach File" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <button class="action-button" title="Voice Input" disabled>
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
+                        <textarea 
+                            id="chatInput" 
+                            class="chat-input" 
+                            placeholder="Type your message here... (Shift+Enter for new line)"
+                            rows="1"></textarea>
+                        <button class="send-button" id="sendButton" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Settings Panel removed for cleaner interface -->
+        </main>
+    </div>
+
+    <!-- Chat Info Panel (Right Sidebar) -->
+    <aside class="chat-info-panel">
+        <div class="info-section">
+            <h3><i class="fas fa-info-circle"></i> Session Info</h3>
+            <div class="info-stats">
+                <div class="stat-row">
+                    <span>Messages:</span>
+                    <span id="messageCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Response Time:</span>
+                    <span id="responseTime" class="response-time">-</span>
+                </div>
+                <div class="stat-row">
+                    <span>Tokens Used:</span>
+                    <span id="tokenCount" class="token-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Session Cost:</span>
+                    <span id="sessionCost" class="session-cost">$0.00</span>
+                </div>
+                <div class="stat-row">
+                    <span>Uploaded Files:</span>
+                    <span id="fileCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3><i class="fas fa-history"></i> Quick Actions</h3>
+            <div class="quick-actions">
+                <button class="quick-action-btn" onclick="chatInterface.addMessage('user', 'What can you help me with?'); chatInterface.sendMessage()">
+                    <i class="fas fa-question-circle"></i>
+                    What can you do?
+                </button>
+                <button class="quick-action-btn" onclick="chatInterface.addMessage('user', 'Summarize the uploaded documents'); chatInterface.sendMessage()">
+                    <i class="fas fa-file-alt"></i>
+                    Summarize docs
+                </button>
+                <button class="quick-action-btn" onclick="chatInterface.addMessage('user', 'Show system status'); chatInterface.sendMessage()">
+                    <i class="fas fa-heartbeat"></i>
+                    System status
+                </button>
+                <button class="quick-action-btn" onclick="chatInterface.addMessage('user', 'Help me with a technical question'); chatInterface.sendMessage()">
+                    <i class="fas fa-tools"></i>
+                    Tech support
+                </button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3><i class="fas fa-chart-line"></i> Session Metrics</h3>
+            <div class="metrics-chart" id="metricsChart">
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-area"></i>
+                    <p>Metrics will appear here during conversation</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <script src="js/main.js?v=8"></script>
+    <script src="js/chat.js?v=13"></script>
+</body>
+</html>

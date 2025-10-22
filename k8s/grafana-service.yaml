@@ -5,6 +5,7 @@ metadata:
   namespace: genai-chatbot
   labels:
     app: grafana
+    component: monitoring
 spec:
   selector:
     app: grafana

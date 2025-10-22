@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Chatbot - Prometheus Metrics</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/monitoring.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-robot"></i> GenAI Bot</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="alerts.html" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Alerts</span>
+                        <span class="badge" id="alertBadge">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="mlflow.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>MLflow</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="grafana.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Grafana</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="prometheus.html" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span>Prometheus</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot" id="systemStatus"></span>
+                    <span class="status-text">System Status</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1><i class="fas fa-database"></i> Prometheus Metrics</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="refreshMetrics()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <button class="btn btn-success" onclick="openPrometheusNew()">
+                        <i class="fas fa-external-link-alt"></i> Open Prometheus
+                    </button>
+                </div>
+            </header>
+
+            <div class="monitoring-content">
+                <!-- Prometheus Status -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-heartbeat"></i> Prometheus Status</h3>
+                        <div class="status-badges">
+                            <span class="status-badge" id="prometheusStatus">Checking...</span>
+                            <span class="connection-info" id="prometheusUrl">http://localhost:9090</span>
+                        </div>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-item">
+                            <label>Service:</label>
+                            <span id="prometheusService">Prometheus Monitoring System</span>
+                        </div>
+                        <div class="status-item">
+                            <label>Port:</label>
+                            <span id="prometheusPort">9090</span>
+                        </div>
+                        <div class="status-item">
+                            <label>Targets:</label>
+                            <span id="prometheusTargets">Loading...</span>
+                        </div>
+                        <div class="status-item">
+                            <label>Last Scrape:</label>
+                            <span id="lastScrape">Never</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-line"></i> Key Metrics</h3>
+                        <div class="time-range-selector">
+                            <select id="timeRange" onchange="updateTimeRange()">
+                                <option value="5m">Last 5 minutes</option>
+                                <option value="1h" selected>Last hour</option>
+                                <option value="6h">Last 6 hours</option>
+                                <option value="24h">Last 24 hours</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-comments"></i> Chat Requests</h4>
+                                <span class="metric-trend" id="chatTrend">+5.2%</span>
+                            </div>
+                            <div class="metric-value" id="chatRequests">1,247</div>
+                            <div class="metric-subtitle">Total requests</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-clock"></i> Response Time</h4>
+                                <span class="metric-trend warning" id="responseTrend">+12%</span>
+                            </div>
+                            <div class="metric-value" id="responseTime">2.3s</div>
+                            <div class="metric-subtitle">Average</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-exclamation-triangle"></i> Error Rate</h4>
+                                <span class="metric-trend success" id="errorTrend">-1.2%</span>
+                            </div>
+                            <div class="metric-value" id="errorRate">0.8%</div>
+                            <div class="metric-subtitle">4xx + 5xx errors</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h4><i class="fas fa-dollar-sign"></i> API Cost</h4>
+                                <span class="metric-trend" id="costTrend">+8.5%</span>
+                            </div>
+                            <div class="metric-value" id="apiCost">$23.45</div>
+                            <div class="metric-subtitle">Today</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Metrics -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list"></i> Available Metrics</h3>
+                        <div class="search-box">
+                            <input type="text" id="metricSearch" placeholder="Search metrics..." onkeyup="filterMetrics()">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    <div class="metrics-list" id="metricsList">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading metrics...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Query Interface -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-terminal"></i> PromQL Query</h3>
+                        <button class="btn btn-outline" onclick="showQueryExamples()">
+                            <i class="fas fa-lightbulb"></i> Examples
+                        </button>
+                    </div>
+                    <div class="query-interface">
+                        <div class="query-input-group">
+                            <textarea 
+                                id="promqlQuery" 
+                                placeholder="Enter PromQL query... e.g., rate(http_requests_total[5m])"
+                                rows="3"></textarea>
+                            <button class="btn btn-primary" onclick="executeQuery()">
+                                <i class="fas fa-play"></i> Execute
+                            </button>
+                        </div>
+                        <div class="query-results" id="queryResults">
+                            <div class="no-data-state">
+                                <i class="fas fa-search"></i>
+                                <p>Enter a PromQL query to see results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Targets Status -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bullseye"></i> Scrape Targets</h3>
+                        <span class="refresh-indicator" id="targetsRefresh">
+                            <i class="fas fa-sync fa-spin"></i> Updating...
+                        </span>
+                    </div>
+                    <div class="targets-list" id="targetsList">
+                        <div class="target-item">
+                            <div class="target-info">
+                                <div class="target-name">genai-chatbot</div>
+                                <div class="target-url">http://genai-chatbot-service:8000/metrics</div>
+                            </div>
+                            <div class="target-status">
+                                <span class="status-badge success">UP</span>
+                                <span class="last-scrape">2s ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="target-item">
+                            <div class="target-info">
+                                <div class="target-name">mlflow-server</div>
+                                <div class="target-url">http://mlflow-service:5000/metrics</div>
+                            </div>
+                            <div class="target-status">
+                                <span class="status-badge success">UP</span>
+                                <span class="last-scrape">3s ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="target-item">
+                            <div class="target-info">
+                                <div class="target-name">prometheus</div>
+                                <div class="target-url">http://localhost:9090/metrics</div>
+                            </div>
+                            <div class="target-status">
+                                <span class="status-badge success">UP</span>
+                                <span class="last-scrape">1s ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Embedded Prometheus -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-desktop"></i> Prometheus Console</h3>
+                        <div class="iframe-controls">
+                            <button class="btn btn-sm" onclick="togglePrometheusFullscreen()">
+                                <i class="fas fa-expand"></i> Fullscreen
+                            </button>
+                            <button class="btn btn-sm" onclick="refreshPrometheusIframe()">
+                                <i class="fas fa-redo"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="iframe-container" id="prometheusContainer">
+                        <iframe 
+                            id="prometheusIframe"
+                            src="http://localhost:9090"
+                            width="100%" 
+                            height="600"
+                            frameborder="0">
+                        </iframe>
+                        <div class="iframe-overlay" id="prometheusOverlay">
+                            <div class="overlay-content">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <h3>Prometheus Not Available</h3>
+                                <p>Make sure Prometheus is running on port 9090</p>
+                                <button class="btn btn-primary" onclick="checkPrometheusConnection()">
+                                    <i class="fas fa-sync"></i> Check Connection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Query Examples Modal -->
+    <div class="modal" id="queryExamplesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>PromQL Query Examples</h3>
+                <button class="modal-close" onclick="closeQueryExamples()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="example-group">
+                    <h4>Basic Metrics</h4>
+                    <div class="example-item" onclick="useQuery('up')">
+                        <code>up</code>
+                        <span>Service availability</span>
+                    </div>
+                    <div class="example-item" onclick="useQuery('http_requests_total')">
+                        <code>http_requests_total</code>
+                        <span>Total HTTP requests</span>
+                    </div>
+                </div>
+                
+                <div class="example-group">
+                    <h4>Rate Calculations</h4>
+                    <div class="example-item" onclick="useQuery('rate(http_requests_total[5m])')">
+                        <code>rate(http_requests_total[5m])</code>
+                        <span>Request rate per second</span>
+                    </div>
+                    <div class="example-item" onclick="useQuery('rate(chat_response_time_sum[5m]) / rate(chat_response_time_count[5m])')">
+                        <code>rate(chat_response_time_sum[5m]) / rate(chat_response_time_count[5m])</code>
+                        <span>Average response time</span>
+                    </div>
+                </div>
+                
+                <div class="example-group">
+                    <h4>Aggregations</h4>
+                    <div class="example-item" onclick="useQuery('sum by (status) (rate(http_requests_total[5m]))')">
+                        <code>sum by (status) (rate(http_requests_total[5m]))</code>
+                        <span>Request rate by status code</span>
+                    </div>
+                    <div class="example-item" onclick="useQuery('histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))')">
+                        <code>histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))</code>
+                        <span>95th percentile response time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/prometheus.js"></script>
+</body>
+</html>

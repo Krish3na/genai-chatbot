@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Chatbot - User Dashboard</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/user-dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="user-app-container">
+        <!-- Top Navigation -->
+        <header class="user-header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <h1>GenAI Chatbot</h1>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="user-welcome">
+                    <span class="welcome-text">Welcome back, <span id="userName">User</span>!</span>
+                    <div class="user-status">
+                        <span class="status-dot online"></span>
+                        <span>Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="user-menu">
+                    <button class="user-menu-btn" id="userMenuBtn">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="userDisplayName">User</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="dropdown-header">
+                            <div class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name" id="dropdownUserName">User</div>
+                                <div class="user-role">Chat User</div>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <a href="#" class="dropdown-item" onclick="showProfile()">
+                            <i class="fas fa-user-edit"></i>
+                            <span>Profile Settings</span>
+                        </a>
+                        
+                        <a href="#" class="dropdown-item" onclick="showChatHistory()">
+                            <i class="fas fa-history"></i>
+                            <span>Chat History</span>
+                        </a>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <a href="#" class="dropdown-item admin-access" onclick="switchToAdmin()">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Admin Access</span>
+                        </a>
+                        
+                        <a href="#" class="dropdown-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="user-main">
+            <!-- Quick Stats -->
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalChats">0</h3>
+                        <p>Total Chats</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="documentsUploaded">0</h3>
+                        <p>Documents Uploaded</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="avgResponseTime">0ms</h3>
+                        <p>Avg Response Time</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="sessionsToday">1</h3>
+                        <p>Sessions Today</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="chat-section">
+                <div class="chat-header-section">
+                    <h2><i class="fas fa-comments"></i> Start Chatting</h2>
+                    <p>Choose your chat mode and start an intelligent conversation</p>
+                </div>
+                
+                <div class="chat-modes">
+                    <div class="mode-card active" data-mode="direct">
+                        <div class="mode-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="mode-content">
+                            <h3>Direct Mode</h3>
+                            <p>Fast responses using OpenAI's general knowledge</p>
+                            <div class="mode-features">
+                                <span class="feature-tag"><i class="fas fa-zap"></i> Fast</span>
+                                <span class="feature-tag"><i class="fas fa-globe"></i> General</span>
+                            </div>
+                        </div>
+                        <button class="mode-btn" onclick="startChat('direct')">
+                            <i class="fas fa-play"></i>
+                            Start Chat
+                        </button>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="rag">
+                        <div class="mode-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="mode-content">
+                            <h3>RAG Mode</h3>
+                            <p>Context-aware responses using your uploaded documents</p>
+                            <div class="mode-features">
+                                <span class="feature-tag"><i class="fas fa-file-alt"></i> Document-based</span>
+                                <span class="feature-tag"><i class="fas fa-bullseye"></i> Accurate</span>
+                            </div>
+                        </div>
+                        <button class="mode-btn" onclick="startChat('rag')">
+                            <i class="fas fa-play"></i>
+                            Start Chat
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Chats -->
+            <div class="recent-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Recent Conversations</h2>
+                    <button class="view-all-btn" onclick="showChatHistory()">
+                        <i class="fas fa-external-link-alt"></i>
+                        View All
+                    </button>
+                </div>
+                
+                <div class="recent-chats" id="recentChats">
+                    <div class="chat-item">
+                        <div class="chat-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="chat-content">
+                            <h4>Direct Mode Chat</h4>
+                            <p>Asked about machine learning concepts...</p>
+                            <div class="chat-meta">
+                                <span><i class="fas fa-clock"></i> 2 hours ago</span>
+                                <span><i class="fas fa-comments"></i> 12 messages</span>
+                            </div>
+                        </div>
+                        <button class="continue-btn" onclick="continueChat('direct-123')">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="chat-item">
+                        <div class="chat-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="chat-content">
+                            <h4>RAG Mode Chat</h4>
+                            <p>Document analysis and summarization...</p>
+                            <div class="chat-meta">
+                                <span><i class="fas fa-clock"></i> 1 day ago</span>
+                                <span><i class="fas fa-comments"></i> 8 messages</span>
+                            </div>
+                        </div>
+                        <button class="continue-btn" onclick="continueChat('rag-456')">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="empty-state" style="display: none;">
+                        <i class="fas fa-comments"></i>
+                        <p>No recent conversations</p>
+                        <small>Start a new chat to see your conversation history here</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-section">
+                <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                <div class="quick-actions-grid">
+                    <button class="quick-action-card" onclick="quickAction('help')">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Get Help</span>
+                    </button>
+                    
+                    <button class="quick-action-card" onclick="quickAction('upload')">
+                        <i class="fas fa-upload"></i>
+                        <span>Upload Documents</span>
+                    </button>
+                    
+                    <button class="quick-action-card" onclick="quickAction('templates')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Chat Templates</span>
+                    </button>
+                    
+                    <button class="quick-action-card" onclick="quickAction('export')">
+                        <i class="fas fa-download"></i>
+                        <span>Export Chats</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> Profile Settings</h3>
+                <button class="modal-close" onclick="closeModal('profileModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-form">
+                    <div class="form-group">
+                        <label>Display Name</label>
+                        <input type="text" id="profileDisplayName" placeholder="Enter your display name">
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Chat Mode</label>
+                        <select id="preferredMode">
+                            <option value="direct">Direct Mode</option>
+                            <option value="rag">RAG Mode</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notifications</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="emailNotifications">
+                                <span>Email notifications</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="soundNotifications">
+                                <span>Sound notifications</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('profileModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/user-dashboard.js"></script>
+</body>
+</html>

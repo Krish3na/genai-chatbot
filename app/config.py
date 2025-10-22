@@ -29,9 +29,20 @@ class Settings:
     # MLflow Settings
     MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     MLFLOW_EXPERIMENT_NAME: str = os.getenv("MLFLOW_EXPERIMENT_NAME", "genai-chatbot")
+    MLFLOW_ENABLED: bool = os.getenv("MLFLOW_ENABLED", "False").lower() == "true"  # Temporarily disabled for JSON fix
+    MLFLOW_RUN_NAME_PREFIX: str = os.getenv("MLFLOW_RUN_NAME_PREFIX", "chatbot")
+    MLFLOW_AUTO_LOG: bool = os.getenv("MLFLOW_AUTO_LOG", "True").lower() == "true"
     
     # Monitoring Settings
     PROMETHEUS_ENABLED: bool = os.getenv("PROMETHEUS_ENABLED", "True").lower() == "true"
+    
+    # Email Alert Settings
+    EMAIL_ALERTS_ENABLED: bool = os.getenv("EMAIL_ALERTS_ENABLED", "False").lower() == "true"
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "")
+    SENDER_PASSWORD: str = os.getenv("SENDER_PASSWORD", "")  # Use App Password for Gmail
+    ALERT_RECIPIENTS: str = os.getenv("ALERT_RECIPIENTS", "saikrishna.sriram3@gmail.com")
     
     # RAG Settings
     RAG_TOP_K: int = int(os.getenv("RAG_TOP_K", "5"))
@@ -49,6 +60,11 @@ class Settings:
         # Create data directories if they don't exist
         os.makedirs(cls.VECTOR_DB_PATH, exist_ok=True)
         os.makedirs(cls.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+        
+        # Create MLflow directories if needed
+        if cls.MLFLOW_ENABLED and cls.MLFLOW_TRACKING_URI.startswith("file://"):
+            mlflow_dir = cls.MLFLOW_TRACKING_URI.replace("file://", "")
+            os.makedirs(mlflow_dir, exist_ok=True)
 
 # Global settings instance
 settings = Settings() 

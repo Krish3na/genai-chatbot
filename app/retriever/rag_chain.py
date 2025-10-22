@@ -14,8 +14,12 @@ from app.utils.metrics import record_rag_metrics
 class RAGChain:
     """RAG chain combining document retrieval with generation"""
     
-    def __init__(self):
-        """Initialize RAG chain"""
+    def __init__(self, session_id: str = None):
+        """Initialize RAG chain
+        
+        Args:
+            session_id: Optional session ID for session-specific knowledge base
+        """
         self.llm = ChatOpenAI(
             model=settings.OPENAI_MODEL,
             temperature=settings.OPENAI_TEMPERATURE,
@@ -23,8 +27,9 @@ class RAGChain:
             openai_api_key=settings.OPENAI_API_KEY
         )
         
-        # Initialize vector store (lazy initialization)
-        self.vector_store = VectorStore()
+        # Initialize vector store with session ID (lazy initialization)
+        self.session_id = session_id
+        self.vector_store = VectorStore(session_id=session_id)
         
         # RAG prompt template
         self.rag_prompt = ChatPromptTemplate.from_template("""
@@ -58,20 +63,20 @@ Answer:""")
                     context = self._prepare_context(relevant_docs)
                     sources_used = len(relevant_docs)
                     use_rag = True
-                    print(f"✅ Using RAG with {sources_used} documents")
+                    print(f"Using RAG with {sources_used} documents")
                 else:
                     # No documents found, use general knowledge with RAG
                     context = "No specific documents found. Please provide a general response based on your knowledge."
                     sources_used = 0
                     use_rag = True
-                    print("✅ Using RAG with general knowledge (no documents found)")
+                    print("Using RAG with general knowledge (no documents found)")
             except Exception as e:
-                print(f"⚠️ Vector store failed, falling back to direct OpenAI: {e}")
+                print(f"Vector store failed, falling back to direct OpenAI: {e}")
                 # Fallback to direct OpenAI call without RAG
                 context = "Please provide a helpful response to the user's question."
                 sources_used = 0
                 use_rag = False
-                print("⚠️ Using direct OpenAI (fallback mode)")
+                print("Using direct OpenAI (fallback mode)")
             
             # Generate response
             with get_openai_callback() as cb:
@@ -101,24 +106,24 @@ Answer:""")
             # Record RAG metrics if RAG was used
             if use_rag:
                 try:
-                    print(f"🔍 DEBUG: About to record RAG metrics for user {user_id}")
+                    print(f"DEBUG: About to record RAG metrics for user {user_id}")
                     record_rag_metrics(
                         user_id=user_id,
                         sources_used=sources_used,
                         context_length=len(context)
                     )
-                    print(f"✅ DEBUG: RAG metrics recorded successfully")
+                    print(f"DEBUG: RAG metrics recorded successfully")
                 except Exception as e:
-                    print(f"❌ DEBUG: Failed to record RAG metrics: {e}")
+                    print(f"DEBUG: Failed to record RAG metrics: {e}")
                     import traceback
                     traceback.print_exc()
             else:
-                print(f"🔍 DEBUG: Not recording RAG metrics (use_rag=False)")
+                print(f"DEBUG: Not recording RAG metrics (use_rag=False)")
             
             return response_data
             
         except Exception as e:
-            print(f"❌ Error in RAG chain: {e}")
+            print(f"Error in RAG chain: {e}")
             return {
                 "response": f"I apologize, but I encountered an error: {str(e)}",
                 "tokens_used": 0,

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Chatbot - Alerts & Monitoring</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/alerts.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-robot"></i> GenAI Bot</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="alerts.html" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Alerts</span>
+                        <span class="badge" id="alertBadge">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="mlflow.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>MLflow</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot" id="systemStatus"></span>
+                    <span class="status-text">System Status</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1><i class="fas fa-bell"></i> Alerts & Monitoring</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="checkAlerts()">
+                        <i class="fas fa-sync"></i> Check Alerts
+                    </button>
+                    <button class="btn btn-secondary" onclick="testEmail()">
+                        <i class="fas fa-envelope"></i> Test Email
+                    </button>
+                    <button class="btn btn-success" onclick="openMLflow()">
+                        <i class="fas fa-external-link-alt"></i> MLflow UI
+                    </button>
+                </div>
+            </header>
+
+            <div class="alerts-content">
+                <!-- Alert Status Overview -->
+                <div class="alert-status-grid">
+                    <div class="status-card system-status">
+                        <div class="status-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3 id="systemStatusText">Checking...</h3>
+                            <p>System Health</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card total-alerts">
+                        <div class="status-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3 id="totalAlertsCount">-</h3>
+                            <p>Total Alerts</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card critical-alerts">
+                        <div class="status-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3 id="criticalAlertsCount">-</h3>
+                            <p>Critical Issues</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card warning-alerts">
+                        <div class="status-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3 id="warningAlertsCount">-</h3>
+                            <p>Warnings</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card email-status">
+                        <div class="status-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3 id="emailStatusText">-</h3>
+                            <p>Email Alerts</p>
+                            <small id="emailRecipient">saikrishna.sriram3@gmail.com</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Alerts Section -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Active Alerts</h3>
+                        <div class="alert-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="critical">Critical</button>
+                            <button class="filter-btn" data-filter="warning">Warning</button>
+                        </div>
+                    </div>
+                    <div class="alerts-container" id="activeAlerts">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading alerts...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Thresholds Configuration -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-sliders-h"></i> Alert Thresholds</h3>
+                        <button class="btn btn-outline" onclick="editThresholds()">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                    <div class="thresholds-grid" id="thresholdsList">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading thresholds...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert History -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Alert History</h3>
+                        <div class="time-range-selector">
+                            <select id="timeRange">
+                                <option value="1h">Last Hour</option>
+                                <option value="24h" selected>Last 24 Hours</option>
+                                <option value="7d">Last 7 Days</option>
+                                <option value="30d">Last 30 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="alert-history" id="alertHistory">
+                        <div class="no-data-state">
+                            <i class="fas fa-clock"></i>
+                            <p>No alert history available</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Configuration -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-envelope-open"></i> Email Configuration</h3>
+                        <button class="btn btn-outline" onclick="configureEmail()">
+                            <i class="fas fa-cog"></i> Configure
+                        </button>
+                    </div>
+                    <div class="email-config" id="emailConfig">
+                        <div class="config-item">
+                            <label>Status:</label>
+                            <span id="emailConfigStatus" class="status-badge">Not Configured</span>
+                        </div>
+                        <div class="config-item">
+                            <label>Recipients:</label>
+                            <span id="emailRecipients">saikrishna.sriram3@gmail.com</span>
+                        </div>
+                        <div class="config-item">
+                            <label>SMTP Server:</label>
+                            <span id="smtpServer">smtp.gmail.com</span>
+                        </div>
+                        <div class="config-actions">
+                            <button class="btn btn-primary" onclick="testEmailAlert()">
+                                <i class="fas fa-paper-plane"></i> Send Test Alert
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewEmailGuide()">
+                                <i class="fas fa-question-circle"></i> Setup Guide
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Threshold Edit Modal -->
+    <div class="modal" id="thresholdModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Alert Thresholds</h3>
+                <button class="modal-close" onclick="closeThresholdModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="thresholdForm">
+                    <div class="threshold-group">
+                        <h4>Performance Thresholds</h4>
+                        <div class="input-group">
+                            <label for="responseTimeWarning">Response Time Warning (seconds)</label>
+                            <input type="number" id="responseTimeWarning" step="0.1" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label for="responseTimeCritical">Response Time Critical (seconds)</label>
+                            <input type="number" id="responseTimeCritical" step="0.1" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="threshold-group">
+                        <h4>Quality Thresholds</h4>
+                        <div class="input-group">
+                            <label for="accuracyWarning">Model Accuracy Warning (%)</label>
+                            <input type="number" id="accuracyWarning" min="0" max="100">
+                        </div>
+                        <div class="input-group">
+                            <label for="accuracyCritical">Model Accuracy Critical (%)</label>
+                            <input type="number" id="accuracyCritical" min="0" max="100">
+                        </div>
+                    </div>
+                    
+                    <div class="threshold-group">
+                        <h4>Cost Thresholds</h4>
+                        <div class="input-group">
+                            <label for="dailyCostWarning">Daily Cost Warning ($)</label>
+                            <input type="number" id="dailyCostWarning" step="0.01" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label for="dailyCostCritical">Daily Cost Critical ($)</label>
+                            <input type="number" id="dailyCostCritical" step="0.01" min="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeThresholdModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveThresholds()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/alerts.js"></script>
+</body>
+</html>

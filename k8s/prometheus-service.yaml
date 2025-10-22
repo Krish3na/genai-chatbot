@@ -5,6 +5,7 @@ metadata:
   namespace: genai-chatbot
   labels:
     app: prometheus
+    component: monitoring
 spec:
   selector:
     app: prometheus

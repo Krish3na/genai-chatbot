@@ -17,7 +17,7 @@ class ConversationManager:
     def __init__(self):
         """Initialize the conversation manager"""
         self.conversations: Dict[str, ChatChain] = {}
-        self.rag_chain = RAGChain()
+        self.rag_chains: Dict[str, RAGChain] = {}  # Session-specific RAG chains
         self.chat_chain = ChatChain()  # Add direct chat chain
         self.intent_classifier = IntentClassifier()
         self.user_metadata: Dict[str, Dict[str, Any]] = {}
@@ -36,7 +36,13 @@ class ConversationManager:
         self.user_metadata[user_id]["last_activity"] = time.time()
         return self.conversations[user_id]
     
-    async def process_message(self, message: str, user_id: str, use_rag: Optional[bool] = None) -> Dict[str, Any]:
+    def get_or_create_rag_chain(self, session_id: str) -> RAGChain:
+        """Get existing RAG chain or create new session-specific one"""
+        if session_id not in self.rag_chains:
+            self.rag_chains[session_id] = RAGChain(session_id=session_id)
+        return self.rag_chains[session_id]
+    
+    async def process_message(self, message: str, user_id: str, use_rag: Optional[bool] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Process a message for a specific user with automatic intent classification
         
@@ -74,10 +80,12 @@ class ConversationManager:
             print(f"DEBUG: Final use_rag decision: {use_rag}, intent: {intent.value}")
             
             if use_rag:
-                # Use RAG for enhanced responses
-                print(f"DEBUG: Using RAG chain for message: {message}")
-                result = await self.rag_chain.process_query(message, user_id)
+                # Use session-specific RAG for enhanced responses
+                print(f"DEBUG: Using RAG chain for message: {message}, session: {session_id}")
+                rag_chain = self.get_or_create_rag_chain(session_id or user_id)
+                result = await rag_chain.process_query(message, user_id)
                 result["response_type"] = "rag"
+                result["session_id"] = session_id or user_id
                 # Ensure user has a conversation object for history tracking
                 self.get_or_create_conversation(user_id)
             else:
@@ -114,26 +122,59 @@ class ConversationManager:
             }
             return error_result
     
-    def add_documents_to_knowledge_base(self, documents) -> Dict[str, Any]:
+    def add_documents_to_knowledge_base(self, documents, session_id: str = None) -> Dict[str, Any]:
         """
         Add documents to the knowledge base
         
         Args:
             documents: List of documents to add
+            session_id: Optional session ID for session-specific knowledge base
             
         Returns:
             Dictionary with operation results
         """
-        return self.rag_chain.add_documents_to_knowledge_base(documents)
+        if session_id:
+            # Use session-specific RAG chain
+            rag_chain = self.get_or_create_rag_chain(session_id)
+            return rag_chain.add_documents_to_knowledge_base(documents)
+        else:
+            # Use default global RAG chain (backward compatibility)
+            if not hasattr(self, 'default_rag_chain'):
+                self.default_rag_chain = RAGChain()
+            return self.default_rag_chain.add_documents_to_knowledge_base(documents)
     
-    def get_knowledge_base_stats(self) -> Dict[str, Any]:
+    def get_knowledge_base_stats(self, session_id: str = None) -> Dict[str, Any]:
         """
         Get knowledge base statistics
         
+        Args:
+            session_id: Optional session ID for session-specific stats
+            
         Returns:
             Dictionary with knowledge base statistics
         """
-        return self.rag_chain.get_knowledge_base_stats()
+        if session_id and session_id in self.rag_chains:
+            # Return session-specific stats
+            return self.rag_chains[session_id].get_knowledge_base_stats()
+        elif session_id:
+            # Session doesn't exist, return empty stats
+            return {
+                "total_documents": 0,
+                "total_chunks": 0,
+                "collection_name": f"session_{session_id}",
+                "status": "empty"
+            }
+        else:
+            # Return global stats (backward compatibility)
+            if hasattr(self, 'default_rag_chain'):
+                return self.default_rag_chain.get_knowledge_base_stats()
+            else:
+                return {
+                    "total_documents": 0,
+                    "total_chunks": 0,
+                    "collection_name": "default",
+                    "status": "empty"
+                }
     
     def clear_knowledge_base(self) -> Dict[str, Any]:
         """

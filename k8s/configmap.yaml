@@ -11,4 +11,5 @@ data:
   API_PORT: "8000"
   CHROMA_PERSIST_DIRECTORY: "/app/chroma_db"
   MLFLOW_TRACKING_URI: "http://mlflow-service:5000"
-  MLFLOW_EXPERIMENT_NAME: "genai-chatbot" 
+  MLFLOW_EXPERIMENT_NAME: "genai-chatbot"
+  DATA_DIR: "/app/data/documents" 

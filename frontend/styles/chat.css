@@ -1426,6 +1426,27 @@ body:has(.sidebar.collapsed) .main-content {
     margin-left: 60px !important;
 }
 
+/* Chat-specific sidebar sections */
+.chat-sidebar-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: var(--spacing-md);
+}
+
+.chat-controls {
+    margin-bottom: var(--spacing-lg);
+}
+
+.chat-history-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .chat-container {
     height: 100vh;
     display: flex;

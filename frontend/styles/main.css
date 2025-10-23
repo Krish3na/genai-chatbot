@@ -112,7 +112,15 @@ body {
     padding: var(--spacing-sm);
     border-radius: var(--border-radius);
     transition: background-color var(--transition-fast);
-    display: none;
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Ensure user sidebar toggle is visible */
+#userSidebarToggle {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .sidebar-toggle:hover {

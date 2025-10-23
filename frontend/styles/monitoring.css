@@ -5,6 +5,118 @@
     flex: 1;
 }
 
+/* ===== ENHANCED STATS GRID FOR MLFLOW ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Enhanced stat cards for MLflow */
+.stat-card {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.1);
+}
+
+.stat-icon i {
+    font-size: var(--font-size-xl);
+    color: white;
+}
+
+.stat-content h3 {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-xs) 0;
+    background: linear-gradient(135deg, var(--text-primary), var(--primary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-content p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== DISABLED STATE STYLING ===== */
+.disabled-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.disabled-state i {
+    font-size: var(--font-size-3xl);
+    color: var(--warning-color);
+    margin-bottom: var(--spacing-md);
+}
+
+.disabled-state h4 {
+    color: var(--warning-color);
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: var(--font-size-lg);
+}
+
+.disabled-state p {
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.5;
+}
+
+.disabled-state p:last-child {
+    margin-bottom: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
 /* ===== STATUS BADGES ===== */
 .status-badges {
     display: flex;
@@ -157,24 +269,19 @@
     border: none;
 }
 
-.iframe-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.grafana-message,
+.mlflow-message {
+    width: 100%;
+    height: 600px;
     background: var(--bg-card);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--border-color);
 }
 
-.iframe-overlay.hidden {
-    display: none;
-}
-
-.overlay-content {
+.message-content {
     text-align: center;
     padding: var(--spacing-xl);
 }

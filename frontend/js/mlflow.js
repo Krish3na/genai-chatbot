@@ -101,7 +101,11 @@ class MLflowDashboard {
             const response = await fetch(`${this.apiBase}/mlflow/experiments`);
             if (response.ok) {
                 const data = await response.json();
-                this.updateStatCard('totalExperiments', data.total_experiments || 0);
+                if (data.message === "MLflow is disabled") {
+                    this.updateStatCard('totalExperiments', 'Disabled');
+                } else {
+                    this.updateStatCard('totalExperiments', data.total_experiments || 0);
+                }
             }
         } catch (error) {
             console.error('Error loading experiment stats:', error);
@@ -115,9 +119,15 @@ class MLflowDashboard {
             const response = await fetch(`${this.apiBase}/mlflow/best-run`);
             if (response.ok) {
                 const data = await response.json();
-                this.updateStatCard('totalRuns', data.total_runs || 0);
-                this.updateStatCard('avgResponseTime', `${(data.avg_response_time || 0).toFixed(0)}ms`);
-                this.updateStatCard('avgAccuracy', `${((data.avg_accuracy || 0) * 100).toFixed(1)}%`);
+                if (data.message === "MLflow is disabled") {
+                    this.updateStatCard('totalRuns', 'Disabled');
+                    this.updateStatCard('avgResponseTime', 'Disabled');
+                    this.updateStatCard('avgAccuracy', 'Disabled');
+                } else {
+                    this.updateStatCard('totalRuns', data.total_runs || 0);
+                    this.updateStatCard('avgResponseTime', `${(data.avg_response_time || 0).toFixed(0)}ms`);
+                    this.updateStatCard('avgAccuracy', `${((data.avg_accuracy || 0) * 100).toFixed(1)}%`);
+                }
             }
         } catch (error) {
             console.error('Error loading run stats:', error);
@@ -152,7 +162,18 @@ class MLflowDashboard {
             const response = await fetch(`${this.apiBase}/mlflow/experiments`);
             if (response.ok) {
                 const data = await response.json();
-                container.innerHTML = this.renderExperimentsTable(data.experiments || []);
+                if (data.message === "MLflow is disabled") {
+                    container.innerHTML = `
+                        <div class="disabled-state">
+                            <i class="fas fa-pause-circle"></i>
+                            <h4>MLflow is Disabled</h4>
+                            <p>MLflow tracking is currently disabled in the backend configuration.</p>
+                            <p>To enable MLflow, check your environment variables and restart the application.</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = this.renderExperimentsTable(data.experiments || []);
+                }
             } else {
                 throw new Error('Failed to load experiments');
             }
@@ -175,7 +196,18 @@ class MLflowDashboard {
             const response = await fetch(`${this.apiBase}/mlflow/best-run`);
             if (response.ok) {
                 const data = await response.json();
-                container.innerHTML = this.renderRunsTable([data]);
+                if (data.message === "MLflow is disabled") {
+                    container.innerHTML = `
+                        <div class="disabled-state">
+                            <i class="fas fa-pause-circle"></i>
+                            <h4>MLflow is Disabled</h4>
+                            <p>MLflow tracking is currently disabled in the backend configuration.</p>
+                            <p>To enable MLflow, check your environment variables and restart the application.</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = this.renderRunsTable([data]);
+                }
             } else {
                 throw new Error('Failed to load runs');
             }
@@ -198,7 +230,18 @@ class MLflowDashboard {
             const response = await fetch(`${this.apiBase}/mlflow/model-performance`);
             if (response.ok) {
                 const data = await response.json();
-                container.innerHTML = this.renderPerformanceMetrics(data);
+                if (data.message === "MLflow is disabled") {
+                    container.innerHTML = `
+                        <div class="disabled-state">
+                            <i class="fas fa-pause-circle"></i>
+                            <h4>MLflow is Disabled</h4>
+                            <p>MLflow tracking is currently disabled in the backend configuration.</p>
+                            <p>To enable MLflow, check your environment variables and restart the application.</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = this.renderPerformanceMetrics(data);
+                }
             } else {
                 throw new Error('Failed to load performance data');
             }
@@ -387,6 +430,18 @@ class MLflowDashboard {
             if (icon) {
                 icon.className = container.classList.contains('fullscreen') ? 
                     'fas fa-compress' : 'fas fa-expand';
+            }
+        }
+    }
+
+    adjustIframeHeight() {
+        const iframe = document.getElementById('mlflowFrame');
+        if (iframe) {
+            const container = iframe.closest('.iframe-container');
+            if (container) {
+                const containerHeight = container.offsetHeight;
+                const headerHeight = container.querySelector('.iframe-header')?.offsetHeight || 0;
+                iframe.style.height = `${containerHeight - headerHeight - 20}px`;
             }
         }
     }

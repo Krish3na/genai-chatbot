@@ -177,6 +177,20 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="dashboard-card" onclick="openDashboard('user-filtering')">
+                            <div class="dashboard-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="dashboard-info">
+                                <h4>User Filtering Dashboard</h4>
+                                <p>Filter metrics by specific users, intents, and response types</p>
+                                <div class="dashboard-meta">
+                                    <span><i class="fas fa-filter"></i> 7 panels</span>
+                                    <span><i class="fas fa-clock"></i> Real-time</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -194,20 +208,13 @@
                         </div>
                     </div>
                     <div class="iframe-container" id="grafanaContainer">
-                        <iframe 
-                            id="grafanaIframe"
-                            src="http://localhost:3000/d/system-overview"
-                            width="100%" 
-                            height="600"
-                            frameborder="0">
-                        </iframe>
-                        <div class="iframe-overlay" id="iframeOverlay">
-                            <div class="overlay-content">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <h3>Grafana Not Available</h3>
-                                <p>Make sure Grafana is running on port 3000</p>
-                                <button class="btn btn-primary" onclick="checkGrafanaConnection()">
-                                    <i class="fas fa-sync"></i> Check Connection
+                        <div class="grafana-message">
+                            <div class="message-content">
+                                <i class="fas fa-external-link-alt"></i>
+                                <h3>Grafana Dashboard</h3>
+                                <p>Click on any dashboard card above to open Grafana in a new tab</p>
+                                <button class="btn btn-primary" onclick="openGrafanaNew()">
+                                    <i class="fas fa-external-link-alt"></i> Open Grafana
                                 </button>
                             </div>
                         </div>

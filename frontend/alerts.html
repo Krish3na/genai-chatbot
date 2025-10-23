@@ -13,10 +13,10 @@
         <!-- Navigation Sidebar -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-robot"></i> GenAI Bot</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>GenAI Admin</span>
+                </div>
             </div>
             
             <ul class="nav-menu">
@@ -46,6 +46,18 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="grafana.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Grafana</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="prometheus.html" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span>Prometheus</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="settings.html" class="nav-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
@@ -54,7 +66,7 @@
             </ul>
             
             <div class="sidebar-footer">
-                <div class="status-indicator">
+                <div class="system-status">
                     <span class="status-dot" id="systemStatus"></span>
                     <span class="status-text">System Status</span>
                 </div>

@@ -93,29 +93,40 @@ class ChatInterface {
             
             console.log('User authenticated:', sessionData.username, 'Role:', sessionData.role);
             
-            // Hide sidebar for regular users, show for admins
-            const sidebar = document.getElementById('sidebar');
+            // Show appropriate sidebar based on user role
+            const adminSidebar = document.getElementById('sidebar');
+            const userSidebar = document.getElementById('userSidebar');
             const mainContent = document.querySelector('.main-content');
             
             if (sessionData.role === 'user') {
-                // Hide sidebar for regular users
-                if (sidebar) {
-                    sidebar.style.display = 'none';
+                // Hide admin sidebar, show user sidebar
+                if (adminSidebar) {
+                    adminSidebar.style.display = 'none';
                 }
-                // Make main content full width
+                if (userSidebar) {
+                    userSidebar.style.display = 'flex';
+                }
+                // Adjust main content for user sidebar
                 if (mainContent) {
-                    mainContent.style.marginLeft = '0';
-                    mainContent.style.width = '100%';
+                    mainContent.style.marginLeft = '250px';
+                    mainContent.style.width = 'calc(100% - 250px)';
                 }
                 
                 // Add logout button to chat header for users
                 this.addUserLogoutButton(sessionData.username, sessionData.isAdmin);
                 
+                // Initialize user-specific chat functionality
+                this.initializeUserChatControls();
+                
             } else if (sessionData.role === 'admin') {
-                // Show sidebar for admins
-                if (sidebar) {
-                    sidebar.style.display = 'flex';
+                // Hide user sidebar, show admin sidebar
+                if (userSidebar) {
+                    userSidebar.style.display = 'none';
                 }
+                if (adminSidebar) {
+                    adminSidebar.style.display = 'flex';
+                }
+                // Adjust main content for admin sidebar
                 if (mainContent) {
                     mainContent.style.marginLeft = '250px';
                     mainContent.style.width = 'calc(100% - 250px)';
@@ -158,6 +169,88 @@ class ChatInterface {
             `;
             chatHeader.appendChild(userMenu);
         }
+    }
+
+    initializeUserChatControls() {
+        // Initialize user-specific new chat button
+        const userNewChatBtn = document.getElementById('userNewChatBtn');
+        if (userNewChatBtn) {
+            userNewChatBtn.addEventListener('click', () => {
+                this.startNewChat();
+            });
+        }
+
+        // Debug sidebar toggle button
+        const userSidebarToggle = document.getElementById('userSidebarToggle');
+        if (userSidebarToggle) {
+            console.log('User sidebar toggle button found:', userSidebarToggle);
+            console.log('Button style:', window.getComputedStyle(userSidebarToggle).display);
+            console.log('Button visibility:', window.getComputedStyle(userSidebarToggle).visibility);
+        } else {
+            console.log('User sidebar toggle button NOT found');
+        }
+
+        // Initialize user-specific clear all chats button
+        const userClearAllChats = document.getElementById('userClearAllChats');
+        if (userClearAllChats) {
+            userClearAllChats.addEventListener('click', () => {
+                this.clearAllChats();
+            });
+        }
+
+        // Use user-specific chat list for history
+        this.chatListElement = document.getElementById('userChatList');
+        
+        // Update system status for user sidebar
+        this.updateSystemStatus();
+        
+        // Load chat history for user sidebar
+        this.loadChatHistory();
+        
+        // Debug: Check if chat history is loaded
+        console.log('Chat history after load:', this.chatHistory);
+        console.log('Chat history length:', this.chatHistory.length);
+    }
+
+    updateSystemStatus() {
+        // Update system status for both admin and user sidebars
+        const adminStatus = document.getElementById('systemStatus');
+        const userStatus = document.getElementById('userSystemStatus');
+        
+        // Check if API is accessible
+        fetch(`${this.apiBase}/health`)
+            .then(response => {
+                const isHealthy = response.ok;
+                const statusClass = isHealthy ? 'healthy' : 'error';
+                const statusText = isHealthy ? 'Online' : 'Offline';
+                
+                if (adminStatus) {
+                    adminStatus.className = `status-dot ${statusClass}`;
+                    const statusTextElement = adminStatus.parentElement.querySelector('.status-text');
+                    if (statusTextElement) statusTextElement.textContent = statusText;
+                }
+                
+                if (userStatus) {
+                    userStatus.className = `status-dot ${statusClass}`;
+                    const statusTextElement = userStatus.parentElement.querySelector('.status-text');
+                    if (statusTextElement) statusTextElement.textContent = statusText;
+                }
+            })
+            .catch(error => {
+                console.error('Error checking system status:', error);
+                // Set to offline on error
+                if (adminStatus) {
+                    adminStatus.className = 'status-dot error';
+                    const statusTextElement = adminStatus.parentElement.querySelector('.status-text');
+                    if (statusTextElement) statusTextElement.textContent = 'Offline';
+                }
+                
+                if (userStatus) {
+                    userStatus.className = 'status-dot error';
+                    const statusTextElement = userStatus.parentElement.querySelector('.status-text');
+                    if (statusTextElement) statusTextElement.textContent = 'Offline';
+                }
+            });
     }
 
     setupEventListeners() {
@@ -476,6 +569,11 @@ class ChatInterface {
                 
                 // Update chat info
                 this.updateChatInfo(data);
+                
+                // Save the current chat to history
+                console.log('About to save current chat. Messages:', this.messages.length);
+                this.saveCurrentChat();
+                console.log('Chat history after save:', this.chatHistory.length);
             } else {
                 const errorData = await response.json();
                 this.addMessage('assistant', `Error: ${errorData.detail || 'Something went wrong'}`, true);
@@ -919,7 +1017,21 @@ class ChatInterface {
             this.messages = [];
             this.uploadedFiles = [];
             this.updateUploadedFilesList();
-            localStorage.removeItem('chatHistory');
+            // Clear user-specific chat history
+            const session = localStorage.getItem('userSession');
+            let username = 'anonymous';
+            
+            if (session) {
+                try {
+                    const sessionData = JSON.parse(session);
+                    username = sessionData.username || 'anonymous';
+                } catch (error) {
+                    console.error('Error parsing session for clearing chat:', error);
+                }
+            }
+            
+            const historyKey = `chatHistory_${username}`;
+            localStorage.removeItem(historyKey);
             this.showToast('Chat cleared', 'info');
         }
     }
@@ -951,22 +1063,57 @@ class ChatInterface {
     }
 
     saveChatHistory() {
-        localStorage.setItem('chatHistory', JSON.stringify(this.messages));
+        // Get user-specific chat history key
+        const session = localStorage.getItem('userSession');
+        let username = 'anonymous';
+        
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                username = sessionData.username || 'anonymous';
+            } catch (error) {
+                console.error('Error parsing session for saving chat history:', error);
+            }
+        }
+        
+        const historyKey = `chatHistory_${username}`;
+        localStorage.setItem(historyKey, JSON.stringify(this.messages));
+        console.log(`Saved chat history for user: ${username}`);
     }
 
     loadChatHistory() {
-        const history = localStorage.getItem('chatHistory');
+        // Get user-specific chat history key
+        const session = localStorage.getItem('userSession');
+        let username = 'anonymous';
+        
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                username = sessionData.username || 'anonymous';
+            } catch (error) {
+                console.error('Error parsing session for chat history:', error);
+            }
+        }
+        
+        const historyKey = `chatHistory_${username}`;
+        const history = localStorage.getItem(historyKey);
+        
         if (history) {
             try {
-                this.messages = JSON.parse(history);
+                this.chatHistory = JSON.parse(history);
                 this.renderChatHistory();
+                console.log(`Loaded chat history for user: ${username}, found ${this.chatHistory.length} chats`);
             } catch (error) {
                 console.error('Error loading chat history:', error);
+                this.chatHistory = [];
             }
+        } else {
+            console.log(`No chat history found for user: ${username}`);
+            this.chatHistory = [];
         }
     }
 
-    renderChatHistory() {
+    renderChatMessages() {
         const messagesContainer = document.getElementById('chatMessages');
         if (!messagesContainer) return;
 
@@ -1051,7 +1198,21 @@ class ChatInterface {
     // Chat History Management
     setupChatHistory() {
         // Load chat history from localStorage
-        this.chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+        // Load user-specific chat history
+        const session = localStorage.getItem('userSession');
+        let username = 'anonymous';
+        
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                username = sessionData.username || 'anonymous';
+            } catch (error) {
+                console.error('Error parsing session for chat history:', error);
+            }
+        }
+        
+        const historyKey = `chatHistory_${username}`;
+        this.chatHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
         
         // Setup event listeners
         const newChatBtn = document.getElementById('newChatBtn');
@@ -1124,7 +1285,11 @@ class ChatInterface {
     }
     
     saveCurrentChat() {
-        if (!this.currentChatId || this.messages.length === 0) return;
+        console.log('saveCurrentChat called. currentChatId:', this.currentChatId, 'messages.length:', this.messages.length);
+        if (!this.currentChatId || this.messages.length === 0) {
+            console.log('saveCurrentChat: Not saving - no chat ID or no messages');
+            return;
+        }
         
         const chatData = {
             id: this.currentChatId,
@@ -1146,7 +1311,21 @@ class ChatInterface {
         }
         
         // Save to localStorage
-        localStorage.setItem('chatHistory', JSON.stringify(this.chatHistory));
+        // Save user-specific chat history
+        const session = localStorage.getItem('userSession');
+        let username = 'anonymous';
+        
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                username = sessionData.username || 'anonymous';
+            } catch (error) {
+                console.error('Error parsing session for saving chat history:', error);
+            }
+        }
+        
+        const historyKey = `chatHistory_${username}`;
+        localStorage.setItem(historyKey, JSON.stringify(this.chatHistory));
         
         console.log('Saved chat:', chatData.title);
     }
@@ -1195,8 +1374,18 @@ class ChatInterface {
     }
     
     renderChatHistory() {
-        const chatList = document.getElementById('chatList');
-        if (!chatList) return;
+        // Check both admin and user chat lists - prioritize user chat list for user role
+        const userChatList = document.getElementById('userChatList');
+        const adminChatList = document.getElementById('chatList');
+        const chatList = userChatList || adminChatList;
+        
+        console.log('renderChatHistory called. userChatList:', userChatList, 'adminChatList:', adminChatList, 'selected:', chatList);
+        console.log('this.chatHistory length:', this.chatHistory.length);
+        console.log('this.chatHistory:', this.chatHistory);
+        if (!chatList) {
+            console.log('No chat list element found!');
+            return;
+        }
         
         // No sample data - start with empty history
         
@@ -1211,8 +1400,10 @@ class ChatInterface {
             return;
         }
         
-        chatList.innerHTML = this.chatHistory.map(chat => {
+        console.log('About to render chat history items...');
+        const chatHTML = this.chatHistory.map(chat => {
             const isActive = chat.id === this.currentChatId;
+            console.log('Rendering chat:', chat.title, 'ID:', chat.id, 'Active:', isActive);
             
             return `
                 <div class="chat-item ${isActive ? 'active' : ''}" onclick="chatInterface.loadChat('${chat.id}')">
@@ -1220,6 +1411,10 @@ class ChatInterface {
                 </div>
             `;
         }).join('');
+        
+        console.log('Generated chat HTML:', chatHTML);
+        chatList.innerHTML = chatHTML;
+        console.log('Chat list innerHTML set. Final innerHTML:', chatList.innerHTML);
         
         // Update chat stats
         this.updateChatStats();
@@ -1307,10 +1502,26 @@ class ChatInterface {
     
     clearAllChats() {
         if (confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+            // Get user-specific chat history key
+            const session = localStorage.getItem('userSession');
+            let username = 'anonymous';
+            
+            if (session) {
+                try {
+                    const sessionData = JSON.parse(session);
+                    username = sessionData.username || 'anonymous';
+                } catch (error) {
+                    console.error('Error parsing session for clearing chat history:', error);
+                }
+            }
+            
+            const historyKey = `chatHistory_${username}`;
             this.chatHistory = [];
-            localStorage.removeItem('chatHistory');
+            this.messages = [];
+            localStorage.removeItem(historyKey);
             this.renderChatHistory();
-            console.log('Cleared all chat history');
+            this.clearChatMessages();
+            console.log(`Cleared all chat history for user: ${username}`);
         }
     }
     
@@ -1425,6 +1636,7 @@ class ChatInterface {
             }
         }, 100); // Small delay to ensure DOM is ready
     }
+
 }
 
 // Global logout function

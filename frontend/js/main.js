@@ -153,6 +153,7 @@ function updateAlertBadge(count) {
  * Initialize sidebar toggle functionality
  */
 function initializeSidebar() {
+    // Handle admin sidebar
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
 
@@ -167,6 +168,25 @@ function initializeSidebar() {
                 !sidebar.contains(e.target) && 
                 !sidebarToggle.contains(e.target)) {
                 sidebar.classList.remove('active');
+            }
+        });
+    }
+
+    // Handle user sidebar
+    const userSidebarToggle = document.getElementById('userSidebarToggle');
+    const userSidebar = document.getElementById('userSidebar');
+
+    if (userSidebarToggle && userSidebar) {
+        userSidebarToggle.addEventListener('click', () => {
+            userSidebar.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && 
+                !userSidebar.contains(e.target) && 
+                !userSidebarToggle.contains(e.target)) {
+                userSidebar.classList.remove('active');
             }
         });
     }

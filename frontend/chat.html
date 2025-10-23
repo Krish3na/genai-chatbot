@@ -10,31 +10,81 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Collapsible Sidebar -->
-        <nav class="sidebar" id="sidebar">
-            <!-- Sidebar Toggle Button -->
-            <div class="sidebar-toggle-btn" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            
-            <!-- Top Section - Navigation -->
-            <div class="nav-section">
-                <button class="new-chat-btn" id="newChatBtn" title="Start New Chat">
-                    <i class="fas fa-plus"></i> 
-                    <span class="btn-text">New chat</span>
-                </button>
-                
-                <!-- Navigation menu removed for cleaner chat interface -->
-            </div>
-            
-            <!-- Bottom Section - Chat History -->
-            <div class="chat-section">
-                <div class="chat-section-header">
-                    <i class="fas fa-history"></i>
-                    <span class="section-text">Recent Chats</span>
+        <!-- Admin Navigation Sidebar (hidden by default, shown for admins) -->
+        <nav class="sidebar admin-sidebar" id="sidebar" style="display: none;">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>GenAI Admin</span>
                 </div>
-                <div class="chat-list" id="chatList">
-                    <!-- Chat history items will be dynamically added here -->
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="alerts.html" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Alerts</span>
+                        <span class="badge" id="alertBadge">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="mlflow.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>MLflow</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="grafana.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Grafana</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="prometheus.html" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span>Prometheus</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Chat-specific section for admins -->
+            <div class="chat-sidebar-section">
+                <div class="chat-controls">
+                    <button class="new-chat-btn" id="newChatBtn" title="Start New Chat">
+                        <i class="fas fa-plus"></i> 
+                        <span class="btn-text">New chat</span>
+                    </button>
+                </div>
+                
+                <div class="chat-history-section">
+                    <div class="chat-section-header">
+                        <i class="fas fa-history"></i>
+                        <span class="section-text">Recent Chats</span>
+                    </div>
+                    <div class="chat-list" id="chatList">
+                        <!-- Chat history items will be dynamically added here -->
+                    </div>
                 </div>
             </div>
             
@@ -43,9 +93,53 @@
                     <i class="fas fa-trash"></i>
                     <span>Clear All</span>
                 </button>
-                <div class="status-indicator">
-                    <span class="status-dot healthy" id="systemStatus"></span>
-                    <span class="status-text">System Online</span>
+                <div class="system-status">
+                    <span class="status-dot" id="systemStatus"></span>
+                    <span class="status-text">System Status</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- User Chat Sidebar (simple, for regular users) -->
+        <nav class="sidebar user-sidebar" id="userSidebar" style="display: none;">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>GenAI Chat</span>
+                </div>
+                <button class="sidebar-toggle" id="userSidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <!-- Chat controls for users -->
+            <div class="chat-sidebar-section">
+                <div class="chat-controls">
+                    <button class="new-chat-btn" id="userNewChatBtn" title="Start New Chat">
+                        <i class="fas fa-plus"></i> 
+                        <span class="btn-text">New chat</span>
+                    </button>
+                </div>
+                
+                <div class="chat-history-section">
+                    <div class="chat-section-header">
+                        <i class="fas fa-history"></i>
+                        <span class="section-text">Recent Chats</span>
+                    </div>
+                    <div class="chat-list" id="userChatList">
+                        <!-- Chat history items will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="clear-all-btn" id="userClearAllChats" title="Clear All Chat History">
+                    <i class="fas fa-trash"></i>
+                    <span>Clear All</span>
+                </button>
+                <div class="system-status">
+                    <span class="status-dot healthy" id="userSystemStatus"></span>
+                    <span class="status-text">Online</span>
                 </div>
             </div>
         </nav>

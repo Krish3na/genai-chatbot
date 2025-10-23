@@ -56,12 +56,15 @@ class ConversationManager:
         """
         start_time = time.time()
         
-        # Update message count
+        # Update message count and analytics
         if user_id not in self.user_metadata:
             self.user_metadata[user_id] = {
                 "created_at": time.time(),
                 "message_count": 0,
-                "last_activity": time.time()
+                "last_activity": time.time(),
+                "total_tokens": 0,
+                "total_cost": 0.0,
+                "response_times": []
             }
         
         self.user_metadata[user_id]["message_count"] += 1
@@ -97,15 +100,37 @@ class ConversationManager:
                 self.get_or_create_conversation(user_id)
             
             # Add intent classification metadata
-            result["intent"] = intent.value
+            result["intent"] = intent.value if intent else "general"
             result["confidence"] = confidence
-            result["intent_description"] = intent_metadata["description"]
-            result["response_style"] = intent_metadata["response_style"]
+            result["intent_description"] = intent_metadata.get("description", "General conversation") if intent_metadata else "General conversation"
+            result["response_style"] = intent_metadata.get("response_style", "conversational") if intent_metadata else "conversational"
             
             # Add metadata
             result["user_id"] = user_id
             result["message_count"] = self.user_metadata[user_id]["message_count"]
             result["latency_ms"] = (time.time() - start_time) * 1000
+            
+            # Track analytics
+            response_time = (time.time() - start_time) * 1000
+            if "response_times" not in self.user_metadata[user_id]:
+                self.user_metadata[user_id]["response_times"] = []
+            self.user_metadata[user_id]["response_times"].append(response_time)
+            
+            # Estimate cost (rough calculation based on message length)
+            estimated_tokens = len(message.split()) * 1.3  # Rough token estimate
+            estimated_cost = estimated_tokens * 0.00002  # $0.00002 per token (GPT-4 pricing)
+            
+            if "total_tokens" not in self.user_metadata[user_id]:
+                self.user_metadata[user_id]["total_tokens"] = 0
+            if "total_cost" not in self.user_metadata[user_id]:
+                self.user_metadata[user_id]["total_cost"] = 0.0
+                
+            self.user_metadata[user_id]["total_tokens"] += estimated_tokens
+            self.user_metadata[user_id]["total_cost"] += estimated_cost
+            
+            # Keep only last 100 response times for performance
+            if len(self.user_metadata[user_id]["response_times"]) > 100:
+                self.user_metadata[user_id]["response_times"] = self.user_metadata[user_id]["response_times"][-100:]
             
             return result
             

@@ -2,6 +2,7 @@
 class Dashboard {
     constructor() {
         this.apiBase = window.API_BASE || 'http://localhost:8000';
+        this.selectedUser = 'all'; // Track selected user
         this.init();
     }
 
@@ -35,17 +36,90 @@ class Dashboard {
 
     async loadSystemStats() {
         try {
-            // Load chat statistics
-            const response = await fetch(`${this.apiBase}/metrics`);
+            // Load comprehensive analytics from new endpoint with user filter
+            const url = this.selectedUser === 'all' 
+                ? `${this.apiBase}/dashboard/analytics`
+                : `${this.apiBase}/dashboard/analytics?user_id=${this.selectedUser}`;
+                
+            const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
-                this.updateStatCard('totalChats', data.total_requests || 0);
+                
+                // Update all stat cards with real data
+                this.updateStatCard('totalChats', data.total_conversations || 0);
                 this.updateStatCard('avgResponseTime', `${data.avg_response_time || 0}ms`);
-                this.updateStatCard('dailyCost', `$${(data.daily_cost || 0).toFixed(2)}`);
+                this.updateStatCard('dailyCost', `$${data.daily_cost || 0}`);
+                this.updateStatCard('activeAlerts', 0); // Will be updated by loadRecentAlerts
+                
+                // Update additional stats if elements exist
+                this.updateStatCard('totalUsers', data.total_users || 0);
+                this.updateStatCard('totalMessages', data.total_messages || 0);
+                this.updateStatCard('activeSessions', data.active_sessions || 0);
+                this.updateStatCard('totalDocuments', data.total_documents || 0);
+                this.updateStatCard('systemUptime', this.formatUptime(data.system_uptime || 0));
+                
+                console.log(`Dashboard analytics loaded for ${this.selectedUser}:`, data);
+            } else {
+                console.error('Failed to load analytics:', response.status);
+                // Fallback to showing zeros
+                this.updateStatCard('totalChats', 0);
+                this.updateStatCard('avgResponseTime', '0ms');
+                this.updateStatCard('dailyCost', '$0.00');
             }
         } catch (error) {
             console.error('Error loading system stats:', error);
+            // Show error state
+            this.updateStatCard('totalChats', 'Error');
+            this.updateStatCard('avgResponseTime', 'Error');
+            this.updateStatCard('dailyCost', 'Error');
         }
+    }
+
+    changeSelectedUser(userId) {
+        try {
+            this.selectedUser = userId;
+            console.log(`Switched to viewing data for: ${userId}`);
+            this.loadDashboardData(); // Reload all data for selected user
+        } catch (error) {
+            console.error('Error changing selected user:', error);
+            this.showToast('Error loading user data', 'error');
+        }
+    }
+
+    showToast(message, type = 'info') {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-size: 14px;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease;
+        `;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span style="margin-left: 8px;">${message}</span>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease forwards';
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
     }
 
     async loadRecentActivity() {
@@ -53,27 +127,58 @@ class Dashboard {
         if (!activityList) return;
 
         try {
-            // Mock recent activity data
-            const activities = [
-                { icon: 'fas fa-comment', text: 'New conversation started', time: '2 minutes ago' },
-                { icon: 'fas fa-upload', text: 'Document uploaded for RAG', time: '5 minutes ago' },
-                { icon: 'fas fa-chart-line', text: 'MLflow experiment logged', time: '10 minutes ago' },
-                { icon: 'fas fa-bell', text: 'Alert threshold updated', time: '15 minutes ago' }
-            ];
-
-            activityList.innerHTML = activities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class="${activity.icon}"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p>${activity.text}</p>
-                        <small>${activity.time}</small>
-                    </div>
-                </div>
-            `).join('');
+            // Load real recent activity from new endpoint with user filter
+            const url = this.selectedUser === 'all' 
+                ? `${this.apiBase}/dashboard/recent-activity`
+                : `${this.apiBase}/dashboard/recent-activity?user_id=${this.selectedUser}`;
+                
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                const activities = data.activities || [];
+                
+                if (activities.length > 0) {
+                    activityList.innerHTML = activities.map(activity => `
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="${activity.icon}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p>${activity.text}</p>
+                                <small>${activity.time}</small>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    activityList.innerHTML = `
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p>No recent activity</p>
+                                <small>Start a conversation to see activity</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
         } catch (error) {
             console.error('Error loading recent activity:', error);
+            // Fallback to error message
+            activityList.innerHTML = `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p>Unable to load recent activity</p>
+                        <small>Error: ${error.message}</small>
+                    </div>
+                </div>
+            `;
         }
     }
 
@@ -97,18 +202,57 @@ class Dashboard {
     }
 
     async loadSystemHealth() {
-        const healthChecks = [
-            { id: 'apiStatus', endpoint: '/health', name: 'API Server' },
-            { id: 'mlflowStatus', endpoint: 'http://localhost:5000', name: 'MLflow' }
-        ];
-
-        for (const check of healthChecks) {
-            try {
-                const response = await fetch(check.endpoint.startsWith('http') ? check.endpoint : `${this.apiBase}${check.endpoint}`);
-                this.updateHealthStatus(check.id, response.ok ? 'healthy' : 'error');
-            } catch (error) {
-                this.updateHealthStatus(check.id, 'error');
+        try {
+            // Load real system health from new endpoint
+            const response = await fetch(`${this.apiBase}/dashboard/system-health`);
+            if (response.ok) {
+                const healthData = await response.json();
+                
+                // Update health status for each component
+                Object.entries(healthData).forEach(([componentKey, componentData]) => {
+                    const elementId = this.getHealthElementId(componentKey);
+                    if (elementId) {
+                        this.updateHealthStatus(elementId, componentData.status);
+                    }
+                });
+                
+                console.log('System health loaded:', healthData);
+            } else {
+                console.error('Failed to load system health:', response.status);
+                // Set all to error state
+                ['apiStatus', 'mlflowStatus', 'databaseStatus', 'vectorStoreStatus', 'emailAlertsStatus'].forEach(id => {
+                    this.updateHealthStatus(id, 'error');
+                });
             }
+        } catch (error) {
+            console.error('Error loading system health:', error);
+            // Set all to error state
+            ['apiStatus', 'mlflowStatus', 'databaseStatus', 'vectorStoreStatus', 'emailAlertsStatus'].forEach(id => {
+                this.updateHealthStatus(id, 'error');
+            });
+        }
+    }
+
+    getHealthElementId(componentKey) {
+        const mapping = {
+            'api_server': 'apiStatus',
+            'mlflow': 'mlflowStatus', 
+            'database': 'databaseStatus',
+            'vector_store': 'vectorStoreStatus',
+            'email_alerts': 'emailAlertsStatus'
+        };
+        return mapping[componentKey];
+    }
+
+    formatUptime(seconds) {
+        if (seconds < 60) {
+            return `${Math.floor(seconds)}s`;
+        } else if (seconds < 3600) {
+            return `${Math.floor(seconds / 60)}m`;
+        } else if (seconds < 86400) {
+            return `${Math.floor(seconds / 3600)}h`;
+        } else {
+            return `${Math.floor(seconds / 86400)}d`;
         }
     }
 
@@ -165,6 +309,90 @@ function refreshDashboard() {
     }
 }
 
+// Global functions for user selection
+function filterUsers() {
+    const input = document.getElementById('userSearchInput');
+    const select = document.getElementById('userSelect');
+    
+    if (!input || !select) return;
+    
+    const filter = input.value.toLowerCase();
+    const options = select.querySelectorAll('option');
+    
+    // Show all options first
+    options.forEach(option => {
+        option.style.display = 'block';
+    });
+    
+    // If there's a filter, hide non-matching options
+    if (filter.trim()) {
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            if (!text.includes(filter)) {
+                option.style.display = 'none';
+            }
+        });
+    }
+}
+
+function performSearch() {
+    const input = document.getElementById('userSearchInput');
+    const select = document.getElementById('userSelect');
+    
+    if (!input || !select) return;
+    
+    const searchTerm = input.value.toLowerCase().trim();
+    const options = select.querySelectorAll('option');
+    
+    // Find exact match first
+    let exactMatch = null;
+    options.forEach(option => {
+        if (option.textContent.toLowerCase() === searchTerm) {
+            exactMatch = option;
+        }
+    });
+    
+    if (exactMatch) {
+        select.value = exactMatch.value;
+        changeSelectedUser();
+        return;
+    }
+    
+    // Find partial match
+    let partialMatch = null;
+    options.forEach(option => {
+        if (option.textContent.toLowerCase().includes(searchTerm) && !partialMatch) {
+            partialMatch = option;
+        }
+    });
+    
+    if (partialMatch) {
+        select.value = partialMatch.value;
+        changeSelectedUser();
+    } else {
+        // No match found, show error
+        if (window.dashboard) {
+            window.dashboard.showToast('No user found matching: ' + searchTerm, 'error');
+        }
+    }
+}
+
+function changeSelectedUser() {
+    try {
+        const userSelect = document.getElementById('userSelect');
+        if (window.dashboard && userSelect) {
+            window.dashboard.changeSelectedUser(userSelect.value);
+        } else {
+            console.error('Dashboard not initialized or user select element not found');
+        }
+    } catch (error) {
+        console.error('Error in changeSelectedUser:', error);
+        if (window.dashboard) {
+            window.dashboard.showToast('Error changing user selection', 'error');
+        }
+    }
+}
+
 // Global functions for admin actions
 function toggleUserMenu() {
     const dropdown = document.getElementById('userDropdown');
@@ -203,18 +431,24 @@ function switchToUserView() {
 }
 
 function adminLogout() {
-    // Clear session data
-    localStorage.removeItem('userSession');
-    sessionStorage.removeItem('isAuthenticated');
-    
-    // Show logout message and redirect
-    if (window.dashboard) {
-        window.dashboard.showToast('Admin logged out successfully', 'info');
-    }
-    
-    setTimeout(() => {
+    try {
+        // Clear session data
+        localStorage.removeItem('userSession');
+        sessionStorage.removeItem('isAuthenticated');
+        
+        // Show logout message and redirect
+        if (window.dashboard) {
+            window.dashboard.showToast('Admin logged out successfully', 'info');
+        }
+        
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 500);
+    } catch (error) {
+        console.error('Error during logout:', error);
+        // Force redirect even if there's an error
         window.location.href = 'login.html';
-    }, 1000);
+    }
 }
 
 // Global flags to prevent multiple initializations and redirect loops
@@ -238,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('Dashboard auth check - Session exists:', !!session, 'Is authenticated:', isAuthenticated);
     
-    if (!session || !isAuthenticated) {
+    if (!session) {
         console.log('No session found, redirecting to login');
         if (!window.isRedirectingFromDashboard && !window.isRedirectingToLogin) {
             window.isRedirectingFromDashboard = true;
@@ -270,6 +504,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
+        
+        // Ensure isAuthenticated is set for valid admin sessions
+        sessionStorage.setItem('isAuthenticated', 'true');
         
         console.log('Dashboard authentication successful, initializing...');
         window.dashboard = new Dashboard();

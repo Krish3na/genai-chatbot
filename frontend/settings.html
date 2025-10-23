@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - GenAI Chatbot Admin</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>GenAI Admin</span>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="alerts.html" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Alerts</span>
+                        <span class="badge" id="alertBadge">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="mlflow.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>MLflow</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="grafana.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Grafana</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="prometheus.html" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        <span>Prometheus</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <span class="status-dot" id="systemStatus"></span>
+                    <span class="status-text">System Status</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Settings</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <div class="user-menu" onclick="toggleUserMenu()">
+                        <span class="user-name">Admin</span>
+                        <i class="fas fa-user-circle"></i>
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="dropdown-item" onclick="switchToUserView()">
+                                <i class="fas fa-user"></i> User Portal
+                            </div>
+                            <div class="dropdown-item" onclick="adminLogout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="settings-content">
+                <!-- System Configuration -->
+                <div class="settings-section">
+                    <h2><i class="fas fa-server"></i> System Configuration</h2>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="systemName">System Name</label>
+                            <input type="text" id="systemName" value="GenAI Chatbot" placeholder="Enter system name">
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxUsers">Max Concurrent Users</label>
+                            <input type="number" id="maxUsers" value="100" min="1" max="1000">
+                        </div>
+                        <div class="setting-item">
+                            <label for="sessionTimeout">Session Timeout (minutes)</label>
+                            <input type="number" id="sessionTimeout" value="30" min="5" max="480">
+                        </div>
+                        <div class="setting-item">
+                            <label for="enableLogging">Enable Detailed Logging</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableLogging" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Model Configuration -->
+                <div class="settings-section">
+                    <h2><i class="fas fa-brain"></i> AI Model Configuration</h2>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="defaultModel">Default Model</label>
+                            <select id="defaultModel">
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="claude-3">Claude-3</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxTokens">Max Tokens per Response</label>
+                            <input type="number" id="maxTokens" value="2048" min="100" max="8192">
+                        </div>
+                        <div class="setting-item">
+                            <label for="temperature">Temperature</label>
+                            <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                            <span class="range-value" id="temperatureValue">0.7</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="enableRAG">Enable RAG by Default</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableRAG" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="settings-section">
+                    <h2><i class="fas fa-shield-alt"></i> Security Settings</h2>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="requireAuth">Require Authentication</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="requireAuth" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="enableRateLimit">Enable Rate Limiting</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableRateLimit" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxRequestsPerMinute">Max Requests per Minute</label>
+                            <input type="number" id="maxRequestsPerMinute" value="60" min="1" max="1000">
+                        </div>
+                        <div class="setting-item">
+                            <label for="enableIPWhitelist">Enable IP Whitelist</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableIPWhitelist">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monitoring & Alerts -->
+                <div class="settings-section">
+                    <h2><i class="fas fa-chart-line"></i> Monitoring & Alerts</h2>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="enableMetrics">Enable Metrics Collection</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableMetrics" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="enableEmailAlerts">Enable Email Alerts</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableEmailAlerts">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="alertEmail">Alert Email Address</label>
+                            <input type="email" id="alertEmail" placeholder="admin@example.com">
+                        </div>
+                        <div class="setting-item">
+                            <label for="metricsRetention">Metrics Retention (days)</label>
+                            <input type="number" id="metricsRetention" value="30" min="1" max="365">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Management -->
+                <div class="settings-section">
+                    <h2><i class="fas fa-database"></i> Data Management</h2>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="enableBackup">Enable Automatic Backup</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableBackup" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="backupFrequency">Backup Frequency</label>
+                            <select id="backupFrequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="dataRetention">Chat Data Retention (days)</label>
+                            <input type="number" id="dataRetention" value="90" min="1" max="365">
+                        </div>
+                        <div class="setting-item">
+                            <label for="enableDataExport">Enable Data Export</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableDataExport" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="settings-actions">
+                    <button class="btn btn-secondary" onclick="resetToDefaults()">
+                        <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllData()">
+                        <i class="fas fa-trash"></i> Clear All Data
+                    </button>
+                    <button class="btn btn-success" onclick="exportSettings()">
+                        <i class="fas fa-download"></i> Export Settings
+                    </button>
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> Save All Changes
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js?v=5"></script>
+    <script src="js/dashboard.js?v=5"></script>
+    <script>
+        // Settings-specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize settings page
+            initializeSettings();
+            
+            // Update temperature display
+            const temperatureSlider = document.getElementById('temperature');
+            const temperatureValue = document.getElementById('temperatureValue');
+            
+            temperatureSlider.addEventListener('input', function() {
+                temperatureValue.textContent = this.value;
+            });
+        });
+
+        function initializeSettings() {
+            // Load saved settings from localStorage or API
+            const savedSettings = localStorage.getItem('adminSettings');
+            if (savedSettings) {
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    // Apply saved settings to form elements
+                    Object.keys(settings).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            if (element.type === 'checkbox') {
+                                element.checked = settings[key];
+                            } else {
+                                element.value = settings[key];
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error loading settings:', error);
+                }
+            }
+        }
+
+        function saveSettings() {
+            try {
+                const settings = {};
+                const formElements = document.querySelectorAll('input, select');
+                
+                formElements.forEach(element => {
+                    if (element.id) {
+                        if (element.type === 'checkbox') {
+                            settings[element.id] = element.checked;
+                        } else {
+                            settings[element.id] = element.value;
+                        }
+                    }
+                });
+
+                // Save to localStorage
+                localStorage.setItem('adminSettings', JSON.stringify(settings));
+                
+                // Show success message
+                if (window.dashboard) {
+                    window.dashboard.showToast('Settings saved successfully!', 'success');
+                } else {
+                    alert('Settings saved successfully!');
+                }
+                
+                console.log('Settings saved:', settings);
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                if (window.dashboard) {
+                    window.dashboard.showToast('Error saving settings', 'error');
+                } else {
+                    alert('Error saving settings');
+                }
+            }
+        }
+
+        function resetToDefaults() {
+            if (confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+                localStorage.removeItem('adminSettings');
+                location.reload();
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL data? This will delete all chat history, metrics, and user data. This cannot be undone.')) {
+                if (confirm('This is a destructive action. Are you absolutely sure?')) {
+                    // Clear localStorage
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    if (window.dashboard) {
+                        window.dashboard.showToast('All data cleared successfully', 'success');
+                    } else {
+                        alert('All data cleared successfully');
+                    }
+                }
+            }
+        }
+
+        function exportSettings() {
+            try {
+                const settings = localStorage.getItem('adminSettings') || '{}';
+                const blob = new Blob([settings], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'genai-chatbot-settings.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                if (window.dashboard) {
+                    window.dashboard.showToast('Settings exported successfully', 'success');
+                }
+            } catch (error) {
+                console.error('Error exporting settings:', error);
+                if (window.dashboard) {
+                    window.dashboard.showToast('Error exporting settings', 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "GenAI Chatbot - User Filtering Dashboard",
+    "tags": ["genai", "chatbot", "monitoring"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "User Filter Controls",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Total Requests by User",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(genai_chatbot_chat_requests_total{user_id=~\"$user_filter\", intent=~\"$intent_filter\", response_type=~\"$response_type_filter\"}) by (user_id)",
+            "legendFormat": "{{user_id}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 1}
+      },
+      {
+        "id": 3,
+        "title": "Response Time by User",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(genai_chatbot_chat_request_duration_seconds_bucket{user_id=~\"$user_filter\"}[5m])) by (le, user_id))",
+            "legendFormat": "95th percentile - {{user_id}}"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(genai_chatbot_chat_request_duration_seconds_bucket{user_id=~\"$user_filter\"}[5m])) by (le, user_id))",
+            "legendFormat": "50th percentile - {{user_id}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 1}
+      },
+      {
+        "id": 4,
+        "title": "Cost by User",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(genai_chatbot_cost_total{user_id=~\"$user_filter\"}[5m])) by (user_id)",
+            "legendFormat": "{{user_id}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9}
+      },
+      {
+        "id": 5,
+        "title": "Tokens Used by User",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(genai_chatbot_tokens_used_total{user_id=~\"$user_filter\"}[5m])) by (user_id)",
+            "legendFormat": "{{user_id}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9}
+      },
+      {
+        "id": 6,
+        "title": "Requests by Intent",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum(genai_chatbot_chat_requests_total{user_id=~\"$user_filter\", intent=~\"$intent_filter\", response_type=~\"$response_type_filter\"}) by (intent)",
+            "legendFormat": "{{intent}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17}
+      },
+      {
+        "id": 7,
+        "title": "Response Type Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum(genai_chatbot_chat_requests_total{user_id=~\"$user_filter\", intent=~\"$intent_filter\", response_type=~\"$response_type_filter\"}) by (response_type)",
+            "legendFormat": "{{response_type}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 17}
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "user_filter",
+          "type": "query",
+          "query": "label_values(genai_chatbot_chat_requests_total, user_id)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*",
+          "multi": true,
+          "current": {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          }
+        },
+        {
+          "name": "intent_filter",
+          "type": "query", 
+          "query": "label_values(genai_chatbot_chat_requests_total, intent)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*",
+          "multi": true,
+          "current": {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          }
+        },
+        {
+          "name": "response_type_filter",
+          "type": "query",
+          "query": "label_values(genai_chatbot_chat_requests_total, response_type)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*",
+          "multi": true,
+          "current": {
+            "selected": true,
+            "text": "All", 
+            "value": "$__all"
+          }
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

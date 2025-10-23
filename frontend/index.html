@@ -13,7 +13,10 @@
         <!-- Navigation Sidebar -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-robot"></i> GenAI Bot</h2>
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>GenAI Admin</span>
+                </div>
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -66,7 +69,7 @@
             </ul>
             
             <div class="sidebar-footer">
-                <div class="status-indicator">
+                <div class="system-status">
                     <span class="status-dot" id="systemStatus"></span>
                     <span class="status-text">System Status</span>
                 </div>
@@ -78,6 +81,24 @@
             <header class="content-header">
                 <h1>Dashboard Overview</h1>
                 <div class="header-actions">
+                    <div class="user-selector">
+                        <label>
+                            <i class="fas fa-user"></i> View User:
+                        </label>
+                        <div class="user-selector-controls">
+                            <div class="search-container">
+                                <input type="text" id="userSearchInput" placeholder="Search users..." onkeyup="filterUsers()">
+                                <button type="button" id="searchButton" onclick="performSearch()" title="Search">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <select id="userSelect" onchange="changeSelectedUser()">
+                                <option value="all">All Users</option>
+                                <option value="demo-user">demo-user</option>
+                                <option value="admin">admin</option>
+                            </select>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" onclick="refreshDashboard()">
                         <i class="fas fa-sync"></i> Refresh
                     </button>
@@ -141,6 +162,47 @@
                             <p>Daily Cost</p>
                         </div>
                     </div>
+                    
+                    <!-- Additional Stats Row -->
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalMessages">0</h3>
+                            <p>Total Messages</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="activeSessions">0</h3>
+                            <p>Active Sessions</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalDocuments">0</h3>
+                            <p>Total Documents</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Recent Activity & Alerts -->
@@ -200,22 +262,29 @@
                         <div class="health-item">
                             <div class="health-label">MLflow</div>
                             <div class="health-status" id="mlflowStatus">
+                                <span class="status-dot warning"></span>
+                                <span>Warning</span>
+                            </div>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-label">Database</div>
+                            <div class="health-status" id="databaseStatus">
                                 <span class="status-dot healthy"></span>
                                 <span>Healthy</span>
                             </div>
                         </div>
                         <div class="health-item">
-                            <div class="health-label">Database</div>
-                            <div class="health-status" id="dbStatus">
+                            <div class="health-label">Vector Store</div>
+                            <div class="health-status" id="vectorStoreStatus">
                                 <span class="status-dot healthy"></span>
                                 <span>Healthy</span>
                             </div>
                         </div>
                         <div class="health-item">
                             <div class="health-label">Email Alerts</div>
-                            <div class="health-status" id="emailStatus">
+                            <div class="health-status" id="emailAlertsStatus">
                                 <span class="status-dot warning"></span>
-                                <span>Not Configured</span>
+                                <span>Warning</span>
                             </div>
                         </div>
                     </div>
@@ -224,7 +293,7 @@
         </main>
     </div>
 
-    <script src="js/main.js?v=3"></script>
-    <script src="js/dashboard.js?v=3"></script>
+    <script src="js/main.js?v=4"></script>
+    <script src="js/dashboard.js?v=4"></script>
 </body>
 </html>

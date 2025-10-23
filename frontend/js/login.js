@@ -185,7 +185,8 @@ class LoginSystem {
                 const expiresAt = new Date(sessionData.expiresAt);
                 
                 if (now < expiresAt) {
-                    // Valid session exists
+                    // Valid session exists - ensure isAuthenticated is set
+                    sessionStorage.setItem('isAuthenticated', 'true');
                     this.showToast('Welcome back! Redirecting...', 'info');
                     setTimeout(() => {
                         if (sessionData.role === 'admin') {

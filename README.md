@@ -2,13 +2,13 @@
 
 ## 🎥 Demo Video
 
-Watch the complete system demonstration showcasing all features, monitoring capabilities, and production deployment:
+Click the image below to watch the demo on YouTube:
 
-https://github.com/user-attachments/assets/e77ab715-3edb-4573-a7db-b833f292d7a5
+[![Project Demo – click to watch](LoginPage.png)](https://youtu.be/HyaKMYU5Gi4)
 
-📹 **[▶️ Watch Full Demo Video (21MB)](https://github.com/Krish3na/genai-chatbot/raw/main/SampleDemo.mp4)**
+YouTube link: https://youtu.be/HyaKMYU5Gi4
 
-*The video demonstrates the full GenAI Chatbot system including real-time monitoring, MLflow integration, Kubernetes deployment, and comprehensive testing suite.*
+*The video demonstrates the full GenAI Chatbot system including real-time monitoring, MLflow integration, Docker, Kubernetes deployment, and comprehensive testing suite.*
 
 ---
 
